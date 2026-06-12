@@ -2642,11 +2642,64 @@ function updateCityTimeLighting() {
 }
 
 let audioCtx = null, audioMaster = null, citySoundOn = false, cityOscs = [], noiseNode = null;
+let carTimer = null;
+let crowdNoiseNode = null, crowdGain = null, crowdLfos = [];
 function makeNoiseBuffer(ctx) {
   const buffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.35;
   return buffer;
+}
+function playPassingCar() {
+  if (!citySoundOn || !audioCtx || !audioMaster) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const filter = audioCtx.createBiquadFilter();
+    const gain = audioCtx.createGain();
+    const panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+    
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(35 + Math.random() * 10, audioCtx.currentTime);
+    
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(120, audioCtx.currentTime); // muffled background sound
+    
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    
+    let lastNode = osc;
+    lastNode = lastNode.connect(filter);
+    if (panner) {
+      lastNode = lastNode.connect(panner);
+      lastNode = lastNode.connect(gain);
+    } else {
+      lastNode = lastNode.connect(gain);
+    }
+    gain.connect(audioMaster);
+    
+    const duration = 7 + Math.random() * 6; // 7 to 13 seconds passing time
+    const start = audioCtx.currentTime;
+    const end = start + duration;
+    const direction = Math.random() > 0.5 ? 1 : -1;
+    
+    // Smooth fade in and out for distant car passing
+    gain.gain.linearRampToValueAtTime(0.008 + Math.random() * 0.007, start + duration * 0.5);
+    gain.gain.linearRampToValueAtTime(0, end);
+    
+    if (panner) {
+      panner.pan.setValueAtTime(-direction, start);
+      panner.pan.linearRampToValueAtTime(direction, end);
+    }
+    
+    osc.frequency.linearRampToValueAtTime(42, start + duration * 0.5);
+    osc.frequency.linearRampToValueAtTime(32, end);
+    
+    osc.start(start);
+    osc.stop(end);
+  } catch (err) { console.error(err); }
+  
+  // Schedule next car passing (every 8 to 22 seconds)
+  const nextCarTime = (8 + Math.random() * 14) * 1000;
+  carTimer = setTimeout(playPassingCar, nextCarTime);
 }
 function startCityAmbience() {
   if (citySoundOn) return;
@@ -2672,15 +2725,62 @@ function startCityAmbience() {
     o.start();
     return { o, g };
   });
+
+  // Distant crowd speech murmur (100% procedural)
+  try {
+    crowdNoiseNode = audioCtx.createBufferSource();
+    crowdNoiseNode.buffer = makeNoiseBuffer(audioCtx);
+    crowdNoiseNode.loop = true;
+    
+    const voiceFilter = audioCtx.createBiquadFilter();
+    voiceFilter.type = 'bandpass';
+    voiceFilter.frequency.setValueAtTime(650, audioCtx.currentTime);
+    voiceFilter.Q.setValueAtTime(1.2, audioCtx.currentTime);
+    
+    const hpFilter = audioCtx.createBiquadFilter();
+    hpFilter.type = 'highpass';
+    hpFilter.frequency.setValueAtTime(280, audioCtx.currentTime);
+    
+    crowdGain = audioCtx.createGain();
+    crowdGain.gain.setValueAtTime(0.002, audioCtx.currentTime); // quiet background murmur
+    
+    const lfo1 = audioCtx.createOscillator();
+    const lfo1Gain = audioCtx.createGain();
+    lfo1.frequency.value = 1.8;
+    lfo1Gain.gain.value = 0.0006;
+    
+    const lfo2 = audioCtx.createOscillator();
+    const lfo2Gain = audioCtx.createGain();
+    lfo2.frequency.value = 3.3;
+    lfo2Gain.gain.value = 0.0004;
+    
+    lfo1.connect(lfo1Gain).connect(crowdGain.gain);
+    lfo2.connect(lfo2Gain).connect(crowdGain.gain);
+    
+    crowdNoiseNode.connect(voiceFilter).connect(hpFilter).connect(crowdGain).connect(audioMaster);
+    
+    lfo1.start();
+    lfo2.start();
+    crowdNoiseNode.start();
+    crowdLfos = [lfo1, lfo2];
+  } catch (err) { console.error(err); }
+  
   citySoundOn = true;
   $('soundBtn').textContent = '🔊 صوت المدينة';
   updateCityAmbience();
+
+  // Start distant cars loop
+  clearTimeout(carTimer);
+  carTimer = setTimeout(playPassingCar, 1500);
 }
 function stopCityAmbience() {
   citySoundOn = false;
+  clearTimeout(carTimer);
   try { noiseNode?.stop(); } catch {}
+  try { crowdNoiseNode?.stop(); } catch {}
+  crowdLfos.forEach(l => { try { l.stop(); } catch {} });
   cityOscs.forEach(x => { try { x.o.stop(); } catch {} });
-  cityOscs = []; noiseNode = null;
+  cityOscs = []; noiseNode = null; crowdNoiseNode = null; crowdGain = null; crowdLfos = [];
   audioMaster?.disconnect();
   audioMaster = null;
   $('soundBtn').textContent = '🔇 صوت المدينة';
