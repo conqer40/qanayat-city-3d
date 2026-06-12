@@ -1,0 +1,131 @@
+{
+  "users": {
+    "admin": {
+      "user": "admin",
+      "salt": "9b285cff85253efaea5c7352980e1e40",
+      "hash": "673ff9d201c68251cda898578f218e9bca00421930a354203f2824a5fed4c96c1f36db1fc7859396af0168b18c6a7b329c9e0b9f41d7ab0fa109c30e106c6e60",
+      "role": "admin",
+      "style": "shirt",
+      "color": "#e8902e",
+      "contacts": {
+        "wa": "",
+        "fb": "",
+        "phone": "01022104948"
+      },
+      "createdAt": "2026-06-12T21:18:13.320Z"
+    },
+    "تاجر": {
+      "user": "تاجر",
+      "salt": "76a69738e6583612de0df8d432cdfaab",
+      "hash": "eff79fc04d09df7c990628d1563052c841eaaf8503690e474cc0863189d142e0d9f406b05b26f6068515aed38acb4057a6313df275111531d38a3d01c64e832e",
+      "role": "user",
+      "style": "shirt",
+      "color": "#41b06e",
+      "contacts": {
+        "wa": "",
+        "fb": "",
+        "phone": "0100000001"
+      },
+      "createdAt": "2026-06-12T21:19:41.623Z"
+    },
+    "زبون": {
+      "user": "زبون",
+      "salt": "b397115b332e9229757eb38b7b5f5378",
+      "hash": "4e62729cc40299af9defe9cb0563bd03e1fb5728fc8432e507845729c037b2bcfa5b11e20b9c17bd76b24c048c8125174b12827505b8151fc25deeab1426c227",
+      "role": "user",
+      "style": "shirt",
+      "color": "#3a6ea5",
+      "contacts": {
+        "wa": "",
+        "fb": "",
+        "phone": "0100000002"
+      },
+      "createdAt": "2026-06-12T21:19:41.663Z"
+    },
+    "محمد الحاوي": {
+      "user": "محمد الحاوي",
+      "salt": "69bdfaea95c3e21ead9ea47ebf1df437",
+      "hash": "d7bd068026e5868360acdadfa2cb25dca4f42eff765a8f83eedaf64024e01414d907b7c6a0b15b992d7f2d30ef2628520103d01f73c005b548cd5b4d820ddf00",
+      "role": "user",
+      "style": "shirt",
+      "color": "#c23b3b",
+      "contacts": {
+        "wa": "",
+        "fb": "",
+        "phone": ""
+      },
+      "createdAt": "2026-06-12T21:20:29.736Z"
+    },
+    "محمد على": {
+      "user": "محمد على",
+      "salt": "22ef5dcac3a69ab312667b3a33e94b94",
+      "hash": "5717f4b12479d7eac32a85253945ff7aa44746f7840b62b28f9185635fbed4552a0f36230b1fbdf8e7f76e2f1c3d28cba9f02bc70623ae755fcde0251c7b9b59",
+      "role": "user",
+      "style": "shirt",
+      "color": "#e8902e",
+      "contacts": {
+        "wa": "",
+        "fb": "",
+        "phone": "01234567890"
+      },
+      "createdAt": "2026-06-12T21:55:47.092Z"
+    }
+  },
+  "stores": [
+    {
+      "id": 2,
+      "name": "روزا",
+      "owner": "محمد على",
+      "x": -34.6,
+      "z": -139.6,
+      "desc": "",
+      "signImage": "",
+      "items": [
+        {
+          "id": 1,
+          "name": "121212",
+          "price": 111,
+          "desc": "سيبسي",
+          "image": "سءب"
+        }
+      ],
+      "createdAt": "2026-06-12T21:57:02.454Z"
+    }
+  ],
+  "orders": [
+    {
+      "id": 1,
+      "storeId": 2,
+      "storeName": "روزا",
+      "owner": "محمد على",
+      "item": "121212",
+      "price": 111,
+      "qty": 1,
+      "buyer": {
+        "user": "admin",
+        "name": "admin",
+        "phone": "01022104948",
+        "address": "",
+        "note": ""
+      },
+      "time": "2026-06-12T21:58:57.481Z",
+      "status": "جديد"
+    }
+  ],
+  "nextStoreId": 3,
+  "nextOrderId": 2,
+  "settings": {
+    "news": {
+      "text": "تجربه",
+      "everyMinutes": 1,
+      "times": 1
+    },
+    "education": {
+      "videoUrl": "https://youtu.be/hDI6MiXtkRk",
+      "desc": "مجمع تعليمي بالقنايات - بث ومحتوى يحدده أقوى نموذج مفتوح المصدر على الكوكب — وأغلب الناس مش عارفاه! ⚡️ | Kimi K2.6  الأدمن.",
+      "mode": "live",
+      "liveOn": true,
+      "liveStartedAt": 1781305172742
+    }
+  }
+}

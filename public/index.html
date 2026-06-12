@@ -1,0 +1,2915 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>القنايات 3D — مدينة أونلاين</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Cairo', sans-serif; background: #0b1c2c; }
+  #app { width: 100%; height: 100%; }
+  canvas { display: block; }
+
+  #topbar {
+    position: fixed; top: 0; right: 0; left: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px; pointer-events: none;
+    background: linear-gradient(180deg, rgba(5,15,25,.75), transparent);
+  }
+  #topbar h1 { color: #ffe9b0; font-size: 22px; font-weight: 900; text-shadow: 0 2px 8px rgba(0,0,0,.6); }
+  #topbar h1 small { display: block; font-size: 12px; font-weight: 400; color: #cfe3f5; }
+  .btns { display: flex; gap: 8px; pointer-events: auto; flex-wrap: wrap; }
+  .btn {
+    font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 14px;
+    color: #082238; background: #ffd97a; border: none; border-radius: 22px;
+    padding: 8px 16px; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,.35);
+    transition: transform .15s, background .15s;
+  }
+  .btn:hover { transform: translateY(-2px); background: #ffe9ad; }
+  .btn.ghost { background: rgba(255,255,255,.14); color: #fff; backdrop-filter: blur(6px); }
+  .btn.ghost:hover { background: rgba(255,255,255,.25); }
+  .btn.danger { background: #e05252; color: #fff; }
+  .btn.green { background: #41b06e; color: #fff; }
+  .btn.cyan { background: #7ce0ff; color: #06222e; }
+  .btn.sm { padding: 4px 12px; font-size: 12.5px; }
+
+  #hint {
+    position: fixed; bottom: 14px; right: 50%; transform: translateX(50%);
+    z-index: 10; color: #eaf4ff; font-size: 12.5px; font-weight: 700;
+    background: rgba(8,25,40,.65); padding: 8px 18px; border-radius: 20px;
+    backdrop-filter: blur(6px); pointer-events: none; text-align: center;
+    box-shadow: 0 3px 12px rgba(0,0,0,.3);
+  }
+  #online {
+    position: fixed; top: 64px; left: 16px; z-index: 10; color: #b6f0c8;
+    font-size: 13px; font-weight: 700; background: rgba(8,25,40,.65);
+    padding: 6px 14px; border-radius: 18px; backdrop-filter: blur(6px); pointer-events: none;
+  }
+  #newsTicker {
+    position: fixed; top: 54px; right: 0; left: 0; z-index: 13; display: none;
+    background: rgba(255,217,122,.95); color: #082238; height: 32px; overflow: hidden;
+    border-top: 1px solid rgba(255,255,255,.35); border-bottom: 1px solid rgba(0,0,0,.2);
+    font-weight: 900; pointer-events: none;
+  }
+  #newsTicker.show { display: block; }
+  #newsText { display: inline-block; white-space: nowrap; padding-right: 100%; line-height: 32px; animation: tickerMove 18s linear infinite; }
+  @keyframes tickerMove { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+  #rideBtn {
+    position: fixed; bottom: 60px; right: 16px; z-index: 11; display: none;
+    font-size: 15px; padding: 10px 18px;
+  }
+  #clock {
+    position: fixed; bottom: 14px; right: 16px; z-index: 10; color: #ffe9b0;
+    font-size: 13px; font-weight: 700; background: rgba(8,25,40,.65);
+    padding: 7px 14px; border-radius: 18px; pointer-events: none; backdrop-filter: blur(6px);
+  }
+
+  /* ===== لوحات جانبية عامة ===== */
+  .side {
+    position: fixed; top: 70px; right: 16px; z-index: 12; width: 340px; max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 110px); overflow-y: auto;
+    background: linear-gradient(160deg, rgba(13,36,58,.97), rgba(6,20,34,.97));
+    border: 1px solid rgba(255,217,122,.35); border-radius: 18px;
+    padding: 18px; color: #f2f8ff; box-shadow: 0 12px 40px rgba(0,0,0,.5);
+    transform: translateX(120%); transition: transform .3s ease-out;
+  }
+  .side.open { transform: translateX(0); }
+  .side .close {
+    position: absolute; top: 10px; left: 12px; background: none; border: none;
+    color: #9fb8cc; font-size: 20px; cursor: pointer; font-family: inherit;
+  }
+  .side .close:hover { color: #fff; }
+  .side h2 { color: #ffd97a; font-size: 20px; font-weight: 900; }
+  .side input, .side textarea, .side select {
+    width: 100%; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
+    border-radius: 10px; color: #fff; font-family: inherit; font-size: 13.5px; padding: 8px 11px; outline: none; margin-top: 4px;
+  }
+  .side label { display: block; font-size: 12.5px; font-weight: 700; color: #cfe3f5; margin-top: 10px; }
+  .side .row { display: flex; gap: 6px; align-items: center; }
+
+  #story .avatar { font-size: 38px; }
+  #story .job { color: #9fd0ff; font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  #story .badge { font-size: 11px; color: #c9a0e8; margin-bottom: 8px; }
+  #story p { font-size: 14.5px; line-height: 1.9; color: #e8f1fb; }
+  #story .place { margin-top: 10px; font-size: 12px; color: #ffd97a; }
+  #story .links-title { margin-top: 12px; font-size: 12px; color: #9fd0ff; font-weight: 700; }
+  #story .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  #story .chip {
+    background: rgba(255,217,122,.13); border: 1px solid rgba(255,217,122,.45);
+    color: #ffd97a; border-radius: 14px; padding: 3px 11px; font-size: 12.5px;
+    font-family: inherit; font-weight: 700; cursor: pointer;
+  }
+  #story .chip:hover { background: rgba(255,217,122,.3); }
+  #story .aiBox { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,217,122,.25); }
+  #story .aiMsgs { max-height: 170px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  #story .aiMsg { padding: 7px 9px; border-radius: 10px; font-size: 13px; line-height: 1.7; background: rgba(255,255,255,.07); }
+  #story .aiMsg.me { background: rgba(124,224,255,.13); color: #dcf7ff; }
+  #story .aiMsg.npc { background: rgba(255,217,122,.12); color: #fff2c8; }
+
+  #pp { border-color: rgba(124,224,255,.45); }
+  #pp h2 { color: #7ce0ff; }
+  #pp .sub { font-size: 12px; color: #9fd0ff; margin-bottom: 14px; }
+  #pp .actions { display: flex; flex-direction: column; gap: 8px; }
+  #pp .actions button { width: 100%; }
+
+  /* ===== المحل (زبون) ===== */
+  #shop { border-color: rgba(102,224,150,.5); }
+  #shop h2 { color: #7ce69a; }
+  #shop .owner { font-size: 12px; color: #9fd0ff; margin-bottom: 10px; }
+  #shop .storeSign { width: 100%; max-height: 145px; object-fit: cover; border-radius: 10px; margin: 10px 0; background: rgba(255,255,255,.08); }
+  #shop .storeDesc { font-size: 13px; line-height: 1.7; color: #d9ecff; margin: 8px 0 12px; padding: 8px 10px; background: rgba(255,255,255,.06); border-radius: 10px; }
+  .itemRow {
+    display: flex; align-items: center; gap: 8px; padding: 7px 10px; margin-top: 6px;
+    background: rgba(255,255,255,.06); border-radius: 10px; cursor: pointer;
+    border: 2px solid transparent; font-size: 13.5px;
+  }
+  .itemRow img { width: 46px; height: 46px; border-radius: 8px; object-fit: cover; background: rgba(255,255,255,.08); flex: 0 0 auto; }
+  .itemRow .itemText { min-width: 0; }
+  .itemRow .desc { color: #9fb8cc; font-size: 11.5px; line-height: 1.45; margin-top: 2px; }
+  .itemRow.sel { border-color: #7ce69a; background: rgba(124,230,154,.12); }
+  .itemRow .price { margin-right: auto; color: #ffd97a; font-weight: 900; }
+
+  /* ===== المحل (المالك) ===== */
+  #storeOwn { border-color: rgba(255,184,108,.5); }
+  #storeOwn h2 { color: #ffb86c; }
+  #storeOwn .storePreview { width: 100%; max-height: 120px; object-fit: cover; border-radius: 10px; margin-top: 8px; background: rgba(255,255,255,.08); }
+  .storeJump { display: flex; align-items: center; gap: 6px; padding: 6px 8px; margin-top: 5px; background: rgba(255,255,255,.06); border-radius: 8px; font-size: 12.5px; }
+  .storeJump b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .iconBtn { width: 30px; height: 30px; border-radius: 8px; border: none; cursor: pointer; font-family: inherit; font-weight: 900; background: rgba(255,217,122,.18); color: #ffd97a; }
+  .iconBtn:hover { background: rgba(255,217,122,.32); }
+  .ownItem { display: flex; align-items: center; gap: 6px; padding: 5px 8px; margin-top: 5px; background: rgba(255,255,255,.06); border-radius: 8px; font-size: 13px; }
+  .ownItem img { width: 38px; height: 38px; border-radius: 7px; object-fit: cover; background: rgba(255,255,255,.08); }
+  .ownItem .meta { min-width: 0; }
+  .ownItem .desc { color: #9fb8cc; font-size: 11px; line-height: 1.35; }
+  .ownItem .price { margin-right: auto; color: #ffd97a; }
+  .ownItem button { background: none; border: none; color: #ff8a8a; cursor: pointer; font-size: 15px; }
+  .orderCard { background: rgba(255,255,255,.06); border-radius: 10px; padding: 8px 10px; margin-top: 6px; font-size: 12.5px; line-height: 1.7; }
+  .orderCard b { color: #ffd97a; }
+
+  /* ===== الأدمن ===== */
+  #adminPanel {
+    position: fixed; inset: 0; z-index: 22; display: none;
+    align-items: center; justify-content: center; background: rgba(2,10,18,.75); backdrop-filter: blur(4px);
+  }
+  #adminPanel.open { display: flex; }
+  #adminPanel .card {
+    width: 860px; max-width: calc(100vw - 24px); max-height: 88vh; overflow-y: auto;
+    background: linear-gradient(165deg, #11304d, #07182a);
+    border: 1px solid rgba(255,138,138,.5); border-radius: 20px; padding: 22px 24px; color: #eef6ff;
+  }
+  #adminPanel h2 { color: #ff9c9c; font-size: 22px; font-weight: 900; margin-bottom: 10px; }
+  .atabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+  .atab {
+    padding: 6px 16px; border-radius: 16px; cursor: pointer; font-size: 13.5px; font-weight: 700;
+    background: rgba(255,255,255,.08); border: none; color: #cfe3f5; font-family: inherit;
+  }
+  .atab.sel { background: #ff9c9c; color: #2a0a0a; }
+  table.adm { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.adm th { color: #9fd0ff; text-align: right; padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,.15); }
+  table.adm td { padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,.07); }
+  table.adm select { background: #143752; color: #fff; border: 1px solid rgba(255,255,255,.2); border-radius: 6px; font-family: inherit; padding: 2px 6px; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+  .dot.on { background: #41e07e; } .dot.off { background: #5a6b7a; }
+
+  /* ===== الشات ===== */
+  #chat {
+    position: fixed; bottom: 14px; left: 16px; z-index: 14; width: 310px; max-width: calc(100vw - 32px);
+    background: rgba(7,22,36,.92); border: 1px solid rgba(124,224,255,.3);
+    border-radius: 14px; color: #eaf4ff; backdrop-filter: blur(8px);
+    display: none; flex-direction: column; overflow: hidden;
+  }
+  #chat.show { display: flex; }
+  #privateChat {
+    position: fixed; bottom: 14px; left: 342px; z-index: 14; width: 310px; max-width: calc(100vw - 32px);
+    background: rgba(36,25,7,.94); border: 1px solid rgba(255,217,122,.42);
+    border-radius: 14px; color: #fff4cf; backdrop-filter: blur(8px);
+    display: none; flex-direction: column; overflow: hidden;
+  }
+  #privateChat.show { display: flex; }
+  #privateChat header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 12px; background: rgba(255,217,122,.15); font-size: 13px; font-weight: 900; cursor: pointer;
+  }
+  #privateChat.min #privateBody { display: none; }
+  #privateMsgs { height: 170px; overflow-y: auto; padding: 8px 10px; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+  #privateMsgs .m b { color: #ffd97a; }
+  #privateMsgs .m.sys { color: #bea66a; font-size: 12px; }
+  #privateRow { display: flex; gap: 6px; padding: 8px; }
+  #privateInput {
+    flex: 1; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+    border-radius: 10px; color: #fff; font-family: inherit; font-size: 13px; padding: 7px 10px; outline: none;
+  }
+  #privateSend { background: #ffd97a; color: #332400; border: none; border-radius: 10px; padding: 0 14px; font-family: inherit; font-weight: 900; cursor: pointer; }
+  #chat header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 12px; background: rgba(124,224,255,.12); font-size: 13px; font-weight: 900; cursor: pointer;
+  }
+  #chat.min #chatBody { display: none; }
+  #chatMsgs { height: 170px; overflow-y: auto; padding: 8px 10px; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+  #chatMsgs .m b { color: #7ce0ff; }
+  #chatMsgs .m.priv b { color: #ffd97a; }
+  #chatMsgs .m.priv { color: #ffeec2; }
+  #chatMsgs .m.sys { color: #8fa8bb; font-size: 12px; }
+  #chatRow { display: flex; gap: 6px; padding: 8px; }
+  #chatInput {
+    flex: 1; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+    border-radius: 10px; color: #fff; font-family: inherit; font-size: 13px; padding: 7px 10px; outline: none;
+  }
+  #chatSend { background: #7ce0ff; color: #06222e; border: none; border-radius: 10px; padding: 0 14px; font-family: inherit; font-weight: 900; cursor: pointer; }
+
+  #callBar {
+    position: fixed; top: 64px; right: 50%; transform: translateX(50%); z-index: 16;
+    display: none; align-items: center; gap: 12px;
+    background: rgba(10,45,30,.95); border: 1px solid #41b06e; border-radius: 26px;
+    padding: 8px 18px; color: #d6ffe4; font-weight: 900; font-size: 14px;
+  }
+  #callBar.show { display: flex; }
+  .pulse { width: 10px; height: 10px; border-radius: 50%; background: #41e07e; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
+  #toasts { position: fixed; top: 70px; right: 50%; transform: translateX(50%); z-index: 25; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .toast {
+    background: rgba(10,30,48,.97); border: 1px solid rgba(124,224,255,.4); border-radius: 14px;
+    padding: 12px 18px; color: #eaf4ff; font-size: 14px; box-shadow: 0 8px 30px rgba(0,0,0,.5);
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: 92vw;
+  }
+  .toast .btn { padding: 5px 14px; font-size: 13px; }
+
+  /* ===== الدخول ===== */
+  #login {
+    position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 50% 30%, #143752, #07182a 75%);
+  }
+  #login .card {
+    width: 430px; max-width: calc(100vw - 32px); max-height: 92vh; overflow-y: auto;
+    background: linear-gradient(165deg, #11304d, #081d31);
+    border: 1px solid rgba(255,217,122,.4); border-radius: 22px; padding: 26px 28px; color: #eef6ff;
+    box-shadow: 0 24px 80px rgba(0,0,0,.6);
+  }
+  #login h2 { color: #ffd97a; font-size: 24px; font-weight: 900; }
+  #login .tag { color: #9fd0ff; font-size: 13px; margin-bottom: 14px; }
+  .ltabs { display: flex; gap: 6px; margin-bottom: 6px; }
+  .ltab {
+    flex: 1; padding: 8px; border-radius: 12px; cursor: pointer; text-align: center;
+    background: rgba(255,255,255,.07); border: none; color: #cfe3f5; font-family: inherit; font-weight: 900; font-size: 14px;
+  }
+  .ltab.sel { background: #ffd97a; color: #082238; }
+  #login label { display: block; font-size: 13px; font-weight: 700; color: #cfe3f5; margin: 12px 0 4px; }
+  #login input {
+    width: 100%; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
+    border-radius: 10px; color: #fff; font-family: inherit; font-size: 14px; padding: 9px 12px; outline: none;
+  }
+  #login input:focus { border-color: #ffd97a; }
+  .swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+  .swatch { width: 34px; height: 34px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; }
+  .swatch.sel { border-color: #ffd97a; }
+  .styles { display: flex; gap: 8px; }
+  .styleOpt {
+    flex: 1; text-align: center; padding: 8px; border-radius: 12px; cursor: pointer;
+    background: rgba(255,255,255,.07); border: 2px solid transparent; font-size: 13px; font-weight: 700;
+  }
+  .styleOpt.sel { border-color: #ffd97a; background: rgba(255,217,122,.12); }
+  #login .note { font-size: 11.5px; color: #8fa8bb; margin-top: 6px; line-height: 1.7; }
+  #login .go { width: 100%; margin-top: 18px; font-size: 16px; padding: 11px; }
+  #loginErr { color: #ff9c9c; font-size: 12.5px; margin-top: 8px; display: none; }
+  #soloBtn { width: 100%; margin-top: 8px; font-size: 12px; }
+
+  #about {
+    position: fixed; inset: 0; z-index: 20; display: none;
+    align-items: center; justify-content: center; background: rgba(2,10,18,.7); backdrop-filter: blur(4px);
+  }
+  #about.open { display: flex; }
+  #about .card {
+    width: 580px; max-width: calc(100vw - 40px); max-height: 84vh; overflow-y: auto;
+    background: linear-gradient(165deg, #11304d, #07182a);
+    border: 1px solid rgba(255,217,122,.4); border-radius: 20px; padding: 26px 28px; color: #eef6ff;
+  }
+  #about h2 { color: #ffd97a; font-size: 24px; font-weight: 900; margin-bottom: 4px; }
+  #about h3 { color: #9fd0ff; font-size: 15px; margin: 14px 0 4px; }
+  #about p, #about li { font-size: 14px; line-height: 1.9; }
+  #about ul { padding-right: 20px; }
+  #about a { color: #8ec9ff; }
+  #about .close-row { text-align: center; margin-top: 16px; }
+  #eduPanel {
+    position: fixed; inset: 0; z-index: 21; display: none; align-items: center; justify-content: center;
+    background: rgba(2,10,18,.75); backdrop-filter: blur(4px);
+  }
+  #eduPanel.open { display: flex; }
+  #eduPanel .card {
+    width: 760px; max-width: calc(100vw - 24px); max-height: 88vh; overflow-y: auto;
+    background: linear-gradient(165deg, #11304d, #07182a);
+    border: 1px solid rgba(124,224,255,.45); border-radius: 18px; padding: 20px; color: #eef6ff;
+  }
+  #eduPanel h2 { color: #7ce0ff; font-size: 22px; font-weight: 900; margin-bottom: 6px; }
+  #eduFrame { width: 100%; aspect-ratio: 16/9; border: 0; border-radius: 10px; background: rgba(255,255,255,.07); margin-top: 12px; }
+
+  #loading {
+    position: fixed; inset: 0; z-index: 30; display: none; flex-direction: column;
+    align-items: center; justify-content: center; background: #07182a; color: #ffd97a;
+    font-size: 20px; font-weight: 900; gap: 12px; transition: opacity .5s;
+  }
+  #loading .sub { font-size: 13px; color: #9fd0ff; font-weight: 400; }
+  @media (max-width: 600px) {
+    #topbar h1 { font-size: 15px; }
+    #hint { display: none; }
+    #chat { width: calc(100vw - 32px); }
+    #privateChat { left: 16px; bottom: 260px; width: calc(100vw - 32px); }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="topbar">
+  <h1>القنايات 3D<small>مدينة أونلاين على الخريطة الحقيقية</small></h1>
+  <div class="btns">
+    <button class="btn danger" id="adminBtn" style="display:none">⚙ الأدمن</button>
+    <button class="btn green" id="notifyBtn" style="display:none">🔔 تنبيهات الأوردرات</button>
+    <button class="btn ghost" id="cameraBtn">🎥 منظور حر</button>
+    <button class="btn ghost" id="soundBtn">🔇 صوت المدينة</button>
+    <button class="btn ghost" id="dayNightBtn">🌙 ليل</button>
+    <button class="btn" id="aboutBtn">ℹ عن القنايات</button>
+    <button class="btn ghost" id="logoutBtn" style="display:none">🚪 خروج</button>
+  </div>
+</div>
+
+<div id="online">🔴 غير متصل</div>
+<div id="newsTicker"><span id="newsText"></span></div>
+<div id="hint">🚶 الأسهم/WASD &nbsp;•&nbsp; اسحب شخصيتك أو دبل كليك تتنقل &nbsp;•&nbsp; 🛺 زرار العربية يمين تحت &nbsp;•&nbsp; اضغط على الناس والمحلات 🏪</div>
+<div id="clock">🕌 القنايات — نهارًا</div>
+<button class="btn cyan" id="rideBtn">🛺 استدعي عربية</button>
+
+<!-- قصة NPC -->
+<div id="story" class="side">
+  <button class="close" data-close="story">✕</button>
+  <div class="avatar" id="sAvatar">🧔</div>
+  <h2 id="sName"></h2>
+  <div class="job" id="sJob"></div>
+  <div class="badge">🎭 شخصية خيالية من حكايات البلد</div>
+  <p id="sText"></p>
+  <div class="place" id="sPlace"></div>
+  <div class="links-title" id="sLinksTitle">👥 ناس في حياته — دوس تعرف قصتهم:</div>
+  <div class="chips" id="sChips"></div>
+  <div class="aiBox">
+    <label>كلم الشخصية</label>
+    <div class="aiMsgs" id="npcMsgs"></div>
+    <div class="row">
+      <input id="npcInput" maxlength="500" placeholder="اسألها عن البلد أو قصتها...">
+      <button class="btn sm cyan" id="npcSend">إرسال</button>
+    </div>
+  </div>
+</div>
+
+<!-- لاعب حقيقي -->
+<div id="pp" class="side">
+  <button class="close" data-close="pp">✕</button>
+  <h2 id="ppName"></h2>
+  <div class="sub">🎮 لاعب حقيقي متصل دلوقتي</div>
+  <div class="actions">
+    <button class="btn" id="ppChat">💬 ابعتله رسالة خاصة</button>
+    <button class="btn green" id="ppCall">📞 مكالمة صوتية</button>
+    <button class="btn ghost" id="ppContact">📇 اطلب الواتس / الفيس / الرقم</button>
+  </div>
+</div>
+
+<!-- المحل: واجهة الزبون -->
+<div id="shop" class="side">
+  <button class="close" data-close="shop">✕</button>
+  <h2 id="shopName">🏪</h2>
+  <div class="owner" id="shopOwner"></div>
+  <img id="shopSign" class="storeSign" alt="" style="display:none">
+  <div id="shopDesc" class="storeDesc" style="display:none"></div>
+  <div id="shopItems"></div>
+  <label>الكمية</label>
+  <input id="shopQty" type="number" min="1" max="99" value="1">
+  <label>اسمك</label>
+  <input id="buyName" maxlength="40">
+  <label>رقم تليفونك *</label>
+  <input id="buyPhone" maxlength="20" placeholder="01xxxxxxxxx">
+  <label>العنوان</label>
+  <input id="buyAddr" maxlength="120" placeholder="مثال: حي القيني — شارع المسجد">
+  <label>ملاحظات</label>
+  <input id="buyNote" maxlength="200">
+  <button class="btn green" id="buyBtn" style="width:100%;margin-top:14px">🛒 اعمل أوردر</button>
+  <div id="shopMsg" style="font-size:12px;color:#7ce69a;margin-top:8px"></div>
+</div>
+
+<!-- المحل: واجهة المالك -->
+<div id="storeOwn" class="side">
+  <button class="close" data-close="storeOwn">✕</button>
+  <h2>🏪 محلك</h2>
+  <label>محلاتي</label>
+  <div id="myStoreList"></div>
+  <label>اسم المحل</label>
+  <input id="ownName" maxlength="40">
+  <label>يافطة / صورة المحل</label>
+  <input id="ownSignImage" placeholder="رابط صورة يافطة أو صورة للمكان" maxlength="500">
+  <img id="ownSignPreview" class="storePreview" alt="" style="display:none">
+  <label>وصف المحل</label>
+  <textarea id="ownStoreDesc" placeholder="اكتب وصف المكان، مواعيد العمل، أو أي تفاصيل تظهر للزبون" maxlength="300"></textarea>
+  <button class="btn sm" id="ownRename" style="margin-top:8px">حفظ بيانات المحل</button>
+  <label>الأصناف</label>
+  <div id="ownItems"></div>
+  <label>اسم المنتج</label>
+  <input id="ownItemName" placeholder="مثال: جبنة قديمة" maxlength="40">
+  <label>صورة المنتج</label>
+  <input id="ownItemImage" placeholder="رابط صورة المنتج" maxlength="500">
+  <label>شرح المنتج</label>
+  <textarea id="ownItemDesc" placeholder="وصف مختصر للمنتج" maxlength="240"></textarea>
+  <div class="row" style="margin-top:8px">
+    <input id="ownItemPrice" type="number" min="0" placeholder="السعر" style="width:120px">
+    <button class="btn sm green" id="ownAddItem">➕ إضافة المنتج</button>
+  </div>
+  <label style="margin-top:14px">📦 الأوردرات <button class="btn sm ghost" id="ownRefresh">تحديث</button></label>
+  <div id="ownOrders"></div>
+</div>
+
+<!-- لوحة الأدمن -->
+<div id="adminPanel">
+  <div class="card">
+    <h2>⚙ لوحة الأدمن <button class="btn sm ghost" id="admClose" style="float:left">إغلاق ✕</button></h2>
+    <div class="atabs">
+      <button class="atab sel" data-atab="users">👤 المستخدمين</button>
+      <button class="atab" data-atab="onlineT">🟢 المتصلين</button>
+      <button class="atab" data-atab="storesT">🏪 المحلات</button>
+      <button class="atab" data-atab="ordersT">📦 الأوردرات</button>
+      <button class="atab" data-atab="settingsT">📣 إعدادات المدينة</button>
+    </div>
+    <div id="admBody">جارٍ التحميل...</div>
+  </div>
+</div>
+
+<!-- الشات -->
+<div id="chat">
+  <header id="chatHeader"><span>💬 شات القنايات (عام)</span><span id="chatMin">—</span></header>
+  <div id="chatBody">
+    <div id="chatMsgs"></div>
+    <div id="chatRow">
+      <input id="chatInput" placeholder="اكتب رسالة لأهل البلد..." maxlength="300">
+      <button id="chatSend">إرسال</button>
+    </div>
+  </div>
+</div>
+<div id="privateChat">
+  <header id="privateHeader"><span>🔒 خاص مع <b id="privName"></b></span><span id="privateClose">✕</span></header>
+  <div id="privateBody">
+    <div id="privateMsgs"></div>
+    <div id="privateRow">
+      <input id="privateInput" placeholder="اكتب رسالة خاصة..." maxlength="300">
+      <button id="privateSend">إرسال</button>
+    </div>
+  </div>
+</div>
+
+<div id="callBar">
+  <span class="pulse"></span>
+  <span id="callWith">مكالمة مع ...</span>
+  <button class="btn danger" id="callHang">إنهاء ☎</button>
+</div>
+<audio id="remoteAudio" autoplay></audio>
+<div id="toasts"></div>
+
+<!-- الدخول / التسجيل -->
+<div id="login">
+  <div class="card">
+    <h2>🏙 أهلًا بيك في القنايات</h2>
+    <div class="tag">مدينة أونلاين على خريطة القنايات الحقيقية</div>
+    <div class="ltabs">
+      <button class="ltab sel" data-ltab="in">🔑 تسجيل دخول</button>
+      <button class="ltab" data-ltab="up">✨ حساب جديد</button>
+    </div>
+    <!-- دخول -->
+    <div id="tab-in">
+      <label>رقم التليفون</label>
+      <input id="liUser" maxlength="20" placeholder="01xxxxxxxxx" inputmode="tel" autocomplete="tel">
+      <label>الباسورد</label>
+      <input id="liPass" type="password" maxlength="60">
+      <button class="btn go" id="liBtn">🚪 ادخل المدينة</button>
+    </div>
+    <!-- حساب جديد -->
+    <div id="tab-up" style="display:none">
+      <label>اسم الحساب (هيظهر فوق شخصيتك) *</label>
+      <input id="ruUser" maxlength="24" placeholder="مثال: محمد القناياتي">
+      <label>الباسورد * (٤ حروف على الأقل)</label>
+      <input id="ruPass" type="password" maxlength="60">
+      <label>شكل الشخصية</label>
+      <div class="styles">
+        <div class="styleOpt sel" data-style="shirt">👕 قميص وبنطلون</div>
+        <div class="styleOpt" data-style="galabeya">🥻 جلابية بلدي</div>
+      </div>
+      <label>لون الهدوم</label>
+      <div class="swatches" id="swatches"></div>
+      <label>واتساب (اختياري)</label>
+      <input id="ruWa" maxlength="40" placeholder="01xxxxxxxxx">
+      <label>فيسبوك (اختياري)</label>
+      <input id="ruFb" maxlength="80">
+      <label>تليفون *</label>
+      <input id="ruPhone" maxlength="20" placeholder="01xxxxxxxxx" inputmode="tel" autocomplete="tel" required>
+      <div class="note">🔒 بيانات التواصل مش بتظهر لحد غير لما توافق بنفسك على طلب تبادل.</div>
+      <button class="btn go" id="ruBtn">✨ سجّل وادخل المدينة</button>
+    </div>
+    <div id="loginErr"></div>
+    <button class="btn ghost sm" id="soloBtn">🧍 اتفرج على المدينة من غير حساب (وضع فردي)</button>
+  </div>
+</div>
+
+<div id="eduPanel">
+  <div class="card">
+    <h2>🏫 المجمع التعليمي بالقنايات <button class="btn sm ghost" id="eduClose" style="float:left">إغلاق ✕</button></h2>
+    <p id="eduDesc"></p>
+    <div id="eduModeNote" style="font-size:13px;color:#ffd97a;margin-top:8px"></div>
+    <div id="eduEmpty" style="font-size:13px;color:#9fb8cc;margin-top:12px">الأدمن لسه محددش فيديو للمجمع التعليمي.</div>
+    <video id="eduVideo" controls playsinline style="display:none;width:100%;aspect-ratio:16/9;border-radius:10px;background:#000;margin-top:12px"></video>
+    <iframe id="eduFrame" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="display:none"></iframe>
+  </div>
+</div>
+
+<div id="about">
+  <div class="card">
+    <h2>🏙 مدينة القنايات</h2>
+    <p>مدينة مصرية بمحافظة الشرقية تبعد عن الزقازيق ٦ كم. <b>الخريطة مبنية على شبكة الشوارع الحقيقية</b> (أكثر من ١٧٠٠ شارع من OpenStreetMap) ومعالمها الفعلية، والزقازيق نفسها كانت تابعة لمركز القنايات حتى ١٨٩٠.</p>
+    <h3>🎮 إزاي تلعب</h3>
+    <ul>
+      <li>اتحرك بالأسهم/WASD، أو اسحب شخصيتك وارميها، أو دبل كليك على الأرض.</li>
+      <li>🛺 زرار «استدعي عربية» يجيبلك توك توك تركبه وتطير بيه في البلد.</li>
+      <li>اضغط على لاعب حقيقي: 💬 شات خاص / 📞 مكالمة / 📇 تبادل أرقام. والشات العام تحت شمال.</li>
+      <li>المباني اللي عليها 🏪 محلات حقيقية — اضغط عليها واعمل أوردر.</li>
+      <li>الأسماء الصفرا 🎭 شخصيات خيالية بقصص متشابكة.</li>
+    </ul>
+    <h3>🔗 مصادر</h3>
+    <ul>
+      <li><a href="https://ar.wikipedia.org/wiki/القنايات" target="_blank">القنايات — ويكيبيديا</a></li>
+      <li><a href="https://www.openstreetmap.org/#map=15/30.6189/31.4611" target="_blank">بيانات الشوارع © مساهمو OpenStreetMap</a></li>
+    </ul>
+    <div class="close-row"><button class="btn" id="aboutClose">إغلاق</button></div>
+  </div>
+</div>
+
+<div id="loading">جارٍ تحميل خريطة القنايات الحقيقية...<span class="sub" id="loadStep">تحميل بيانات الشوارع 🗺</span></div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ================= أساسيات ================= */
+const CENTER = { lat: 30.6189, lon: 31.4611 };
+const M_LAT = 110574, M_LON = 111320 * Math.cos(CENTER.lat * Math.PI / 180);
+const toX = lon => (lon - CENTER.lon) * M_LON;
+const toZ = lat => -(lat - CENTER.lat) * M_LAT;
+
+const $ = id => document.getElementById(id);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+$('app').appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const DAY_SKY = new THREE.Color(0xa8d4ee), NIGHT_SKY = new THREE.Color(0x0a1430);
+scene.background = DAY_SKY.clone();
+scene.fog = new THREE.Fog(0xa8d4ee, 1600, 4200);
+
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 1, 8000);
+camera.position.set(450, 620, 950);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0, -50);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.maxPolarAngle = Math.PI * 0.48;
+controls.minDistance = 12;
+controls.maxDistance = 2800;
+
+const CAMERA_MODES = [
+  { id: 'free', label: '🎥 منظور حر' },
+  { id: 'first', label: '👁 شخص أول' },
+  { id: 'second', label: '🎮 شخص ثاني' },
+];
+let cameraModeIndex = 0;
+let cameraMode = CAMERA_MODES[0].id;
+const camTarget = new THREE.Vector3();
+const camPos = new THREE.Vector3();
+function setCameraMode(index) {
+  cameraModeIndex = (index + CAMERA_MODES.length) % CAMERA_MODES.length;
+  cameraMode = CAMERA_MODES[cameraModeIndex].id;
+  $('cameraBtn').textContent = CAMERA_MODES[cameraModeIndex].label;
+  controls.enableRotate = cameraMode === 'free';
+  controls.enableZoom = cameraMode === 'free';
+  controls.enablePan = cameraMode === 'free';
+}
+
+const hemi = new THREE.HemisphereLight(0xeaf6ff, 0x8a7a5f, 0.8);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff0d0, 1.7);
+sun.position.set(900, 1100, 400);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+const SC = 1500;
+sun.shadow.camera.left = -SC; sun.shadow.camera.right = SC;
+sun.shadow.camera.top = SC; sun.shadow.camera.bottom = -SC;
+sun.shadow.camera.far = 4000;
+sun.shadow.bias = -0.0004;
+scene.add(sun);
+
+let seed = 20260612;
+function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+const loadStep = t => { const e = $('loadStep'); if (e) e.textContent = t; };
+
+/* ================= لافتات ================= */
+function textSprite(text, color = '#ffe9b0', size = 30, bg = true) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 128;
+  const g = c.getContext('2d');
+  let fpx = size * 2;
+  g.font = `900 ${fpx}px Cairo, sans-serif`;
+  let tw = g.measureText(text).width;
+  if (tw > 440) { fpx = Math.floor(fpx * 440 / tw); g.font = `900 ${fpx}px Cairo, sans-serif`; }
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  if (bg) {
+    tw = g.measureText(text).width;
+    g.fillStyle = 'rgba(8,25,40,.74)';
+    g.beginPath(); g.roundRect(256 - tw/2 - 22, 24, tw + 44, 80, 38); g.fill();
+  }
+  g.fillStyle = color;
+  g.fillText(text, 256, 66);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false }));
+  sp.scale.set(24, 6, 1);
+  return sp;
+}
+
+/* ================= OSM ================= */
+let WAYS = [], RAIL = [], PITCHES = [], PLATFORM = null;
+const ROAD_STYLE = {
+  trunk:        { w: 17, c: 0x2e3136, y: 0.34 },
+  trunk_link:   { w: 12, c: 0x2e3136, y: 0.32 },
+  primary:      { w: 14, c: 0x33363b, y: 0.30 },
+  tertiary:     { w: 9,  c: 0x3c4046, y: 0.28 },
+  tertiary_link:{ w: 8,  c: 0x3c4046, y: 0.26 },
+  unclassified: { w: 7,  c: 0x55524a, y: 0.22 },
+  residential:  { w: 5.5,c: 0x6f6a5e, y: 0.18 },
+  service:      { w: 4,  c: 0x7b7567, y: 0.14 },
+  track:        { w: 3.5,c: 0x96845f, y: 0.10 },
+  path:         { w: 2.5,c: 0xa89a78, y: 0.08 },
+  footway:      { w: 2.5,c: 0xa89a78, y: 0.08 },
+};
+async function loadOSM() {
+  const res = await fetch('data/osm.json');
+  if (!res.ok) throw new Error('osm.json not found');
+  const data = await res.json();
+  for (const el of data.elements) {
+    if (el.type !== 'way' || !el.geometry) continue;
+    const pts = el.geometry.map(g => ({ x: toX(g.lon), z: toZ(g.lat) }));
+    let len = 0;
+    for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i].x - pts[i-1].x, pts[i].z - pts[i-1].z);
+    const t = el.tags || {};
+    if (t.railway === 'rail') RAIL.push({ pts, len });
+    else if (t.railway === 'platform') PLATFORM = { pts };
+    else if (t.leisure === 'pitch') PITCHES.push({ pts });
+    else if (t.highway && ROAD_STYLE[t.highway]) WAYS.push({ cls: t.highway, ...ROAD_STYLE[t.highway], pts, len });
+  }
+}
+
+/* ================= الأرضية ================= */
+function buildGround() {
+  const WORLD = 3600, TEX = 2048, s = TEX / WORLD;
+  const px = v => (v + WORLD/2) * s;
+  const c = document.createElement('canvas'); c.width = c.height = TEX;
+  const g = c.getContext('2d');
+  g.fillStyle = '#7fa257'; g.fillRect(0, 0, TEX, TEX);
+  const greens = ['#76a04e', '#8bb35d', '#6c9747', '#9aab57', '#86a866', '#b3a05f', '#719d52'];
+  for (let i = 0; i < 1400; i++) {
+    const x = rnd()*TEX, y = rnd()*TEX;
+    const ang = Math.sin(x*0.004) * 0.9 + Math.cos(y*0.005) * 0.9;
+    g.save(); g.translate(x, y); g.rotate(ang);
+    g.fillStyle = greens[Math.floor(rnd()*greens.length)];
+    g.globalAlpha = 0.85;
+    g.fillRect(-(20 + rnd()*60), -(5 + rnd()*9), 40 + rnd()*120, 10 + rnd()*18);
+    g.restore();
+  }
+  g.globalAlpha = 1;
+  g.strokeStyle = '#c9b186'; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.lineWidth = 46;
+  for (const w of WAYS) {
+    if (w.cls !== 'residential' && w.cls !== 'service' && w.cls !== 'unclassified') continue;
+    g.beginPath();
+    w.pts.forEach((p, i) => i ? g.lineTo(px(p.x), px(p.z)) : g.moveTo(px(p.x), px(p.z)));
+    g.stroke();
+  }
+  g.strokeStyle = '#d4bf95'; g.lineWidth = 14;
+  for (const w of WAYS) {
+    if (w.cls !== 'residential') continue;
+    g.beginPath();
+    w.pts.forEach((p, i) => i ? g.lineTo(px(p.x), px(p.z)) : g.moveTo(px(p.x), px(p.z)));
+    g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(WORLD, WORLD), new THREE.MeshLambertMaterial({ map: tex }));
+  ground.rotation.x = -Math.PI/2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+  const far = new THREE.Mesh(new THREE.PlaneGeometry(12000, 12000), new THREE.MeshLambertMaterial({ color: 0x7da156 }));
+  far.rotation.x = -Math.PI/2; far.position.y = -0.3;
+  scene.add(far);
+}
+
+/* ================= الشوارع ================= */
+function buildRoads() {
+  const pos = [], col = [], idx = [];
+  let vi = 0;
+  const C = new THREE.Color();
+  function ribbon(pts, w, color, y) {
+    C.setHex(color);
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i-1], b = pts[i];
+      const dx = b.x - a.x, dz = b.z - a.z;
+      const L = Math.hypot(dx, dz); if (L < 0.01) continue;
+      const nx = -dz / L * w/2, nz = dx / L * w/2;
+      pos.push(a.x+nx, y, a.z+nz, a.x-nx, y, a.z-nz, b.x+nx, y, b.z+nz, b.x-nx, y, b.z-nz);
+      for (let k = 0; k < 4; k++) col.push(C.r, C.g, C.b);
+      idx.push(vi, vi+1, vi+2, vi+1, vi+3, vi+2);
+      vi += 4;
+    }
+    for (const p of pts) {
+      const SEG = 6, r = w/2;
+      const ci = vi;
+      pos.push(p.x, y, p.z); col.push(C.r, C.g, C.b); vi++;
+      for (let k = 0; k <= SEG; k++) {
+        const a = k / SEG * Math.PI * 2;
+        pos.push(p.x + Math.cos(a)*r, y, p.z + Math.sin(a)*r);
+        col.push(C.r, C.g, C.b); vi++;
+        if (k > 0) idx.push(ci, ci + k, ci + k + 1);
+      }
+    }
+  }
+  for (const w of WAYS) ribbon(w.pts, w.w, w.c, w.y);
+  for (const r of RAIL) ribbon(r.pts, 3.4, 0x4a4a4a, 0.36);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  geo.setIndex(idx);
+  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+  if (PLATFORM) {
+    const p0 = PLATFORM.pts[0], p1 = PLATFORM.pts[PLATFORM.pts.length-1];
+    const cx = (p0.x+p1.x)/2, cz = (p0.z+p1.z)/2;
+    const ang = Math.atan2(p1.x-p0.x, p1.z-p0.z);
+    const plat = new THREE.Mesh(new THREE.BoxGeometry(6, 1.2, Math.hypot(p1.x-p0.x, p1.z-p0.z)+10), new THREE.MeshLambertMaterial({ color: 0xbdb6a6 }));
+    plat.position.set(cx, 0.6, cz); plat.rotation.y = ang; plat.castShadow = true;
+    scene.add(plat);
+    const lb = textSprite('🚉 محطة قطار القنايات', '#ffe9b0', 30);
+    lb.scale.set(110, 27, 1); lb.position.set(cx, 55, cz);
+    scene.add(lb);
+  }
+}
+
+/* ================= فهرس الشوارع ================= */
+const SEGS = [];
+const HASH = new Map();
+const CELL = 30;
+function hashKey(cx, cz) { return cx + ',' + cz; }
+function buildHash() {
+  for (const w of WAYS) {
+    for (let i = 1; i < w.pts.length; i++) {
+      const a = w.pts[i-1], b = w.pts[i];
+      const s = { ax: a.x, az: a.z, bx: b.x, bz: b.z, hw: w.w/2 };
+      const si = SEGS.push(s) - 1;
+      const x0 = Math.floor((Math.min(a.x,b.x) - 20) / CELL), x1 = Math.floor((Math.max(a.x,b.x) + 20) / CELL);
+      const z0 = Math.floor((Math.min(a.z,b.z) - 20) / CELL), z1 = Math.floor((Math.max(a.z,b.z) + 20) / CELL);
+      for (let cx = x0; cx <= x1; cx++) for (let cz = z0; cz <= z1; cz++) {
+        const k = hashKey(cx, cz);
+        if (!HASH.has(k)) HASH.set(k, []);
+        HASH.get(k).push(si);
+      }
+    }
+  }
+}
+function distToRoad(x, z, maxR) {
+  const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL);
+  let best = maxR;
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+    const arr = HASH.get(hashKey(cx+i, cz+j));
+    if (!arr) continue;
+    for (const si of arr) {
+      const s = SEGS[si];
+      const dx = s.bx - s.ax, dz = s.bz - s.az;
+      const L2 = dx*dx + dz*dz;
+      let t = L2 ? ((x - s.ax)*dx + (z - s.az)*dz) / L2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      const d = Math.hypot(x - (s.ax + t*dx), z - (s.az + t*dz)) - s.hw;
+      if (d < best) best = d;
+    }
+  }
+  return best;
+}
+
+/* ================= المعالم ================= */
+const LANDMARKS = [
+  { name: 'مسجد الحرمين',        x:  57, z: -663, type: 'mosque', s: 1.0 },
+  { name: 'مسجد الغمري الجديد',  x: 354, z: -575, type: 'mosque', s: 0.9 },
+  { name: 'مسجد القواس',         x: 412, z: -387, type: 'mosque', s: 1.0 },
+  { name: 'مسجد القيني',         x:  29, z: -321, type: 'mosque', s: 1.2 },
+  { name: 'مسجد الزاوية',        x: -259, z: -409, type: 'mosque', s: 0.9 },
+  { name: 'المسجد الكويتي',      x: -508, z: -100, type: 'mosque', s: 1.0 },
+  { name: 'مسجد أبو هلال',       x: -354, z:  365, type: 'mosque', s: 0.9 },
+  { name: 'مستشفى القنايات المركزي', x: 527, z: 564, type: 'hospital' },
+  { name: 'ملعب روما', x: 134, z: -498, type: 'gym' },
+  { name: 'المجمع التعليمي بالقنايات', x: -120, z: 260, type: 'education' },
+];
+const EXCLUDE = [];
+const specialPickables = [];
+function buildLandmarks() {
+  for (const lm of LANDMARKS) {
+    if (lm.type === 'mosque') {
+      const s = lm.s;
+      const g = new THREE.Group();
+      const base = new THREE.Mesh(new THREE.BoxGeometry(34*s, 13*s, 26*s), new THREE.MeshLambertMaterial({ color: 0xf0e6d2 }));
+      base.position.y = 6.5*s; base.castShadow = true; base.receiveShadow = true; g.add(base);
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(10*s, 24, 16, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshLambertMaterial({ color: 0x2e8b6e }));
+      dome.position.y = 13*s; dome.castShadow = true; g.add(dome);
+      const minaret = new THREE.Mesh(new THREE.CylinderGeometry(2*s, 2.6*s, 38*s, 10), new THREE.MeshLambertMaterial({ color: 0xf5efe0 }));
+      minaret.position.set(20*s, 19*s, -9*s); minaret.castShadow = true; g.add(minaret);
+      const mTop = new THREE.Mesh(new THREE.ConeGeometry(2.8*s, 6*s, 10), new THREE.MeshLambertMaterial({ color: 0x2e8b6e }));
+      mTop.position.set(20*s, 41*s, -9*s); mTop.castShadow = true; g.add(mTop);
+      const cres = new THREE.Mesh(new THREE.SphereGeometry(0.9*s, 8, 8), new THREE.MeshLambertMaterial({ color: 0xffd97a }));
+      cres.position.set(20*s, 44.6*s, -9*s); g.add(cres);
+      g.position.set(lm.x, 0, lm.z);
+      scene.add(g);
+      EXCLUDE.push({ x: lm.x, z: lm.z, r: 45*s });
+    } else if (lm.type === 'hospital') {
+      const g = new THREE.Group();
+      const main = new THREE.Mesh(new THREE.BoxGeometry(70, 26, 32), new THREE.MeshLambertMaterial({ color: 0xeef0ea }));
+      main.position.y = 13; main.castShadow = true; g.add(main);
+      const wing = new THREE.Mesh(new THREE.BoxGeometry(30, 18, 50), new THREE.MeshLambertMaterial({ color: 0xe2e6dc }));
+      wing.position.set(-30, 9, 20); wing.castShadow = true; g.add(wing);
+      const cres2 = new THREE.Mesh(new THREE.TorusGeometry(5, 1.6, 8, 24, Math.PI*1.4), new THREE.MeshLambertMaterial({ color: 0xc0392b }));
+      cres2.position.set(0, 18, 16.5); cres2.rotation.z = Math.PI*0.8; g.add(cres2);
+      g.position.set(lm.x, 0, lm.z);
+      scene.add(g);
+      EXCLUDE.push({ x: lm.x, z: lm.z, r: 75 });
+    } else if (lm.type === 'gym') {
+      const gym = new THREE.Mesh(new THREE.BoxGeometry(34, 11, 22), new THREE.MeshLambertMaterial({ color: 0x9aa7b8 }));
+      gym.position.set(lm.x, 5.5, lm.z); gym.castShadow = true;
+      scene.add(gym);
+      EXCLUDE.push({ x: lm.x, z: lm.z, r: 40 });
+    } else if (lm.type === 'education') {
+      const g = new THREE.Group();
+      const main = new THREE.Mesh(new THREE.BoxGeometry(64, 20, 38), new THREE.MeshLambertMaterial({ color: 0xd8e8f5 }));
+      main.position.y = 10; main.castShadow = true; main.receiveShadow = true; g.add(main);
+      const hall = new THREE.Mesh(new THREE.BoxGeometry(28, 14, 52), new THREE.MeshLambertMaterial({ color: 0xb8d7ef }));
+      hall.position.set(38, 7, 0); hall.castShadow = true; g.add(hall);
+      const screen = new THREE.Mesh(new THREE.BoxGeometry(36, 10, 1.2), new THREE.MeshLambertMaterial({ color: 0x18324a, emissive: 0x14385c, emissiveIntensity: 0.35 }));
+      screen.position.set(0, 17, 19.5); g.add(screen);
+      g.position.set(lm.x, 0, lm.z);
+      g.userData.education = true;
+      scene.add(g);
+      specialPickables.push(g);
+      EXCLUDE.push({ x: lm.x, z: lm.z, r: 72 });
+    }
+    const lb = textSprite((lm.type === 'mosque' ? '🕌 ' : lm.type === 'hospital' ? '🏥 ' : lm.type === 'education' ? '👁 🏫 ' : '🏟 ') + lm.name, '#ffffff', 28);
+    lb.scale.set(95, 23, 1);
+    lb.position.set(lm.x, lm.type === 'mosque' ? 60*(lm.s || 1) : 55, lm.z);
+    if (lm.type === 'education') { lb.userData.education = true; specialPickables.push(lb); }
+    scene.add(lb);
+  }
+  for (const p of PITCHES) {
+    let cx = 0, cz = 0;
+    p.pts.forEach(q => { cx += q.x; cz += q.z; });
+    cx /= p.pts.length; cz /= p.pts.length;
+    const shape = new THREE.Shape(p.pts.map(q => new THREE.Vector2(q.x - cx, -(q.z - cz))));
+    const m = new THREE.Mesh(new THREE.ShapeGeometry(shape), new THREE.MeshLambertMaterial({ color: 0x3f9e4d }));
+    m.rotation.x = -Math.PI/2;
+    m.position.set(cx, 0.4, cz);
+    m.receiveShadow = true;
+    scene.add(m);
+    EXCLUDE.push({ x: cx, z: cz, r: 60 });
+  }
+  const pitchLb = textSprite('⚽ ملعب مركز شباب القنايات', '#ffffff', 28);
+  pitchLb.scale.set(100, 24, 1);
+  pitchLb.position.set(10, 45, 409);
+  scene.add(pitchLb);
+  const big = [
+    ['حي القيني', 29, -250, '#ffe9b0'], ['حي القواس', 412, -310, '#ffe9b0'],
+    ['حي الزاوية', -259, -330, '#ffe9b0'], ['حي الغمري', 354, -650, '#ffe9b0'],
+    ['القنايات الجديدة', 480, 430, '#ffe9b0'], ['المساكن', -180, 140, '#ffe9b0'],
+    ['⬆ بهنباي', 60, -1280, '#d6f5c9'], ['⬇ الزقازيق (٦ كم)', 0, 1330, '#d6f5c9'],
+    ['◀ الأشراف', 1280, 100, '#d6f5c9'],
+  ];
+  for (const [name, x, z, col] of big) {
+    const sp = textSprite(name, col, 32);
+    sp.scale.set(150, 37, 1);
+    sp.position.set(x, 85, z);
+    scene.add(sp);
+  }
+}
+
+/* ================= واجهات المباني ================= */
+function facadeTexture(floors, lit, variant) {
+  const W = 256, FH = 56, H = floors * FH + 12;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  g.fillStyle = '#e6dcc6'; g.fillRect(0, 0, W, H);
+  for (let f = 0; f < floors; f++) {
+    const y0 = H - (f + 1) * FH;
+    g.fillStyle = 'rgba(0,0,0,.08)';
+    g.fillRect(0, y0 + FH - 3, W, 3);
+    if (f === 0) {
+      g.fillStyle = '#4a3b2a';
+      g.fillRect(20, y0 + 14, 40, FH - 17);
+      g.fillStyle = variant ? '#27506e' : '#5c4631';
+      g.fillRect(86, y0 + 16, 64, FH - 22);
+      g.fillStyle = 'rgba(255,255,255,.25)';
+      g.fillRect(86, y0 + 16, 64, 8);
+      g.fillStyle = '#33414e';
+      g.fillRect(176, y0 + 18, 38, FH - 26);
+    } else {
+      for (let wxi = 0; wxi < 4; wxi++) {
+        const wx = 18 + wxi * 60;
+        const isBalcony = ((f * 7 + wxi * 3 + variant * 5) % 5) < 2;
+        if (lit) {
+          const on = ((f * 13 + wxi * 11 + variant * 7) % 10) < 6;
+          g.fillStyle = on ? '#ffd170' : '#1c2733';
+        } else {
+          g.fillStyle = ((f + wxi + variant) % 3) ? '#3a4754' : '#6e8294';
+        }
+        g.fillRect(wx, y0 + 12, 34, 30);
+        g.strokeStyle = 'rgba(0,0,0,.4)'; g.lineWidth = 2;
+        g.strokeRect(wx, y0 + 12, 34, 30);
+        if (isBalcony) {
+          g.fillStyle = '#c8baa0';
+          g.fillRect(wx - 5, y0 + 40, 44, 7);
+          g.strokeStyle = 'rgba(0,0,0,.3)';
+          for (let b = 0; b < 6; b++) { g.beginPath(); g.moveTo(wx - 3 + b*8, y0 + 26); g.lineTo(wx - 3 + b*8, y0 + 40); g.stroke(); }
+        }
+      }
+    }
+  }
+  g.fillStyle = 'rgba(0,0,0,.06)'; g.fillRect(0, 0, W, 10);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+function roofTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d');
+  g.fillStyle = '#c9bda4'; g.fillRect(0, 0, 64, 64);
+  for (let i = 0; i < 40; i++) {
+    g.fillStyle = `rgba(${100+Math.random()*60|0},${90+Math.random()*50|0},${70+Math.random()*40|0},.25)`;
+    g.fillRect(Math.random()*60, Math.random()*60, 3+Math.random()*8, 3+Math.random()*8);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/* ================= المباني + التصادم ================= */
+const facadeMats = [];
+let roofMat;
+const BUILDINGS = [];           // {x,z,w,d,h,face,cos,sin}
+const BHASH = new Map();
+const BCELL = 40;
+const instMeshes = [];          // للنقر على المباني
+function bKey(cx, cz) { return cx + ',' + cz; }
+function addBHash(b, idx) {
+  const r = Math.max(b.w, b.d);
+  const x0 = Math.floor((b.x - r) / BCELL), x1 = Math.floor((b.x + r) / BCELL);
+  const z0 = Math.floor((b.z - r) / BCELL), z1 = Math.floor((b.z + r) / BCELL);
+  for (let cx = x0; cx <= x1; cx++) for (let cz = z0; cz <= z1; cz++) {
+    const k = bKey(cx, cz);
+    if (!BHASH.has(k)) BHASH.set(k, []);
+    BHASH.get(k).push(idx);
+  }
+}
+function canStand(x, z, r = 2.2) {
+  const cx = Math.floor(x / BCELL), cz = Math.floor(z / BCELL);
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+    const arr = BHASH.get(bKey(cx+i, cz+j));
+    if (!arr) continue;
+    for (const bi of arr) {
+      const b = BUILDINGS[bi];
+      const dx = x - b.x, dz = z - b.z;
+      const lx = dx * b.cos - dz * b.sin;
+      const lz = dx * b.sin + dz * b.cos;
+      if (Math.abs(lx) < b.w/2 + r && Math.abs(lz) < b.d/2 + r) return false;
+    }
+  }
+  return true;
+}
+
+function buildBuildings() {
+  const MAXF = 6, VARIANTS = 2;
+  const dayTex = [], nightTex = [];
+  for (let f = 1; f <= MAXF; f++) {
+    dayTex[f] = []; nightTex[f] = [];
+    for (let v = 0; v < VARIANTS; v++) {
+      dayTex[f][v] = facadeTexture(f, false, v);
+      nightTex[f][v] = facadeTexture(f, true, v);
+    }
+  }
+  roofMat = new THREE.MeshLambertMaterial({ map: roofTexture() });
+  const items = [];
+  const MAXR = 1400;
+  for (const w of WAYS) {
+    if (!['residential', 'unclassified', 'service'].includes(w.cls)) continue;
+    for (let i = 1; i < w.pts.length; i++) {
+      const a = w.pts[i-1], b = w.pts[i];
+      const dx = b.x - a.x, dz = b.z - a.z;
+      const L = Math.hypot(dx, dz); if (L < 12) continue;
+      const ux = dx / L, uz = dz / L;
+      const ang = Math.atan2(ux, uz);
+      const n = Math.floor(L / 11);
+      for (let k = 0; k < n; k++) {
+        const t = (k + 0.5) / n;
+        const px = a.x + dx * t, pz = a.z + dz * t;
+        if (px*px + pz*pz > MAXR*MAXR) continue;
+        for (const side of [-1, 1]) {
+          if (rnd() < 0.08) continue;
+          const bw = 9 + rnd()*4;
+          const bd = 9 + rnd()*6;
+          const off = w.w/2 + bd/2 + 1.2;
+          const bx = px + (-uz) * off * side;
+          const bz = pz + ( ux) * off * side;
+          if (distToRoad(bx, bz, 99) < Math.max(bw, bd)/2 - 0.5) continue;
+          let blocked = false;
+          for (const e of EXCLUDE) {
+            const ddx = bx - e.x, ddz = bz - e.z;
+            if (ddx*ddx + ddz*ddz < e.r*e.r) { blocked = true; break; }
+          }
+          if (blocked) continue;
+          const distC = Math.hypot(bx, bz);
+          let floors;
+          if (distC > 1000) floors = 1 + (rnd()*2|0);
+          else if (rnd() < 0.06) floors = 6;
+          else floors = 2 + (rnd()*3.6|0);
+          floors = Math.min(floors, MAXF);
+          items.push({ x: bx, z: bz, w: bw, d: bd, floors, h: floors * 3.1 + rnd()*1.0, ang, v: (rnd()*VARIANTS)|0, face: ang + (side > 0 ? Math.PI : 0) });
+        }
+      }
+    }
+  }
+  /* فهرس التصادم */
+  items.forEach((it, i) => {
+    it.cos = Math.cos(it.face);
+    it.sin = Math.sin(it.face);
+    BUILDINGS.push(it);
+    addBHash(it, i);
+  });
+  const groups = new Map();
+  items.forEach(it => {
+    const key = it.floors + '_' + it.v;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(it);
+  });
+  const geo = new THREE.BoxGeometry(1, 1, 1);
+  geo.translate(0, 0.5, 0);
+  const dummy = new THREE.Object3D();
+  const C = new THREE.Color();
+  const tints = [0xd8c3a0, 0xcdb491, 0xe0d0b0, 0xc5ab84, 0xd6bd96, 0xbfa580, 0xe6d6b8, 0xcab189];
+  for (const [key, arr] of groups) {
+    const [f, v] = key.split('_').map(Number);
+    const side = new THREE.MeshLambertMaterial({ map: dayTex[f][v] });
+    side.userData = { day: dayTex[f][v], night: nightTex[f][v] };
+    facadeMats.push(side);
+    const inst = new THREE.InstancedMesh(geo, [side, side, roofMat, roofMat, side, side], arr.length);
+    arr.forEach((it, i) => {
+      dummy.position.set(it.x, 0, it.z);
+      dummy.rotation.set(0, it.face, 0);
+      dummy.scale.set(it.w, it.h, it.d);
+      dummy.updateMatrix();
+      inst.setMatrixAt(i, dummy.matrix);
+      inst.setColorAt(i, C.setHex(tints[(rnd()*tints.length)|0]).multiplyScalar(0.95 + rnd()*0.1));
+    });
+    inst.castShadow = true;
+    inst.receiveShadow = true;
+    inst.userData.items = arr;
+    instMeshes.push(inst);
+    scene.add(inst);
+  }
+  const tankItems = items.filter(() => rnd() < 0.4);
+  const tankGeo = new THREE.CylinderGeometry(1.1, 1.1, 1.8, 8);
+  const tanks = new THREE.InstancedMesh(tankGeo, new THREE.MeshLambertMaterial({ color: 0xe8e8e4 }), tankItems.length);
+  tankItems.forEach((it, i) => {
+    dummy.position.set(it.x + (rnd()-0.5)*it.w*0.35, it.h + 0.9, it.z + (rnd()-0.5)*it.d*0.35);
+    dummy.rotation.set(0, 0, 0);
+    dummy.scale.setScalar(0.9 + rnd()*0.5);
+    dummy.updateMatrix();
+    tanks.setMatrixAt(i, dummy.matrix);
+  });
+  tanks.castShadow = true;
+  scene.add(tanks);
+  const dishItems = items.filter(() => rnd() < 0.45);
+  const dishGeo = new THREE.SphereGeometry(1.0, 8, 6);
+  dishGeo.scale(1, 0.3, 1);
+  const dishes = new THREE.InstancedMesh(dishGeo, new THREE.MeshLambertMaterial({ color: 0xd8d8d8 }), dishItems.length);
+  dishItems.forEach((it, i) => {
+    dummy.position.set(it.x + (rnd()-0.5)*it.w*0.4, it.h + 0.5, it.z + (rnd()-0.5)*it.d*0.4);
+    dummy.rotation.set(0.9, rnd()*Math.PI*2, 0);
+    dummy.scale.setScalar(0.8 + rnd()*0.4);
+    dummy.updateMatrix();
+    dishes.setMatrixAt(i, dummy.matrix);
+  });
+  scene.add(dishes);
+  return items.length;
+}
+
+/* ================= نخيل ================= */
+function buildPalms() {
+  const N = 420;
+  const trunkGeo = new THREE.CylinderGeometry(0.5, 0.9, 9, 6);
+  trunkGeo.translate(0, 4.5, 0);
+  const headGeo = new THREE.IcosahedronGeometry(3.4, 1);
+  headGeo.translate(0, 9.5, 0);
+  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshLambertMaterial({ color: 0x8a6a3f }), N);
+  const heads = new THREE.InstancedMesh(headGeo, new THREE.MeshLambertMaterial({ color: 0xffffff }), N);
+  const dummy = new THREE.Object3D();
+  const C = new THREE.Color();
+  let placed = 0, tries = 0;
+  while (placed < N && tries < N * 30) {
+    tries++;
+    const ang = rnd() * Math.PI * 2;
+    const r = 300 + rnd() * 1300;
+    const x = Math.cos(ang) * r, z = Math.sin(ang) * r;
+    if (distToRoad(x, z, 99) < 4) continue;
+    const s = 0.8 + rnd() * 0.9;
+    dummy.position.set(x, 0, z);
+    dummy.rotation.y = rnd() * Math.PI * 2;
+    dummy.scale.setScalar(s);
+    dummy.updateMatrix();
+    trunks.setMatrixAt(placed, dummy.matrix);
+    heads.setMatrixAt(placed, dummy.matrix);
+    heads.setColorAt(placed, C.setHSL(0.29, 0.5, 0.28 + rnd()*0.12));
+    placed++;
+  }
+  trunks.count = heads.count = placed;
+  trunks.castShadow = heads.castShadow = true;
+  scene.add(trunks, heads);
+}
+
+/* ================= NPCs ================= */
+const SKIN = [0xc68642, 0x8d5524, 0xe0ac69, 0xa0673f];
+const CLOTH = [0x3a6ea5, 0x9c3d3d, 0x4a7c45, 0x6b4f9e, 0x37788a, 0x8a6f3a, 0xb05c7a, 0x506680];
+
+const PEOPLE_DEFS = [
+  { name: 'الحاج عبد الستار', job: 'فلاح — والد كابتن كريم', avatar: '👴', home: [57, -700], galabeya: true,
+    links: ['كابتن كريم', 'عم سيد أبو كارو', 'الشيخ محمود'],
+    story: 'غيطي على طريق بهنباي، ورثته عن أبويا وأبويا عن جدّه. محصول الطماطم كله بياخده عم سيد أبو كارو يلف بيه البلد. ابني كريم عايز يبقى لاعب كورة — قلت له الغيط أضمن يا واد، بس الشيخ محمود صاحب عمري قال لي: «سيب الواد يجري ورا حلمه يا عبد الستار». لسه بفكر في كلامه.',
+    place: '🌾 غيطه شمال البلد ناحية بهنباي' },
+  { name: 'أم محمد', job: 'بياعة جبن — والدة نادية', avatar: '👵', home: [0, -60], galabeya: true,
+    links: ['نادية', 'الحاج مرسي', 'الحاج عبد الستار'],
+    story: 'اللبن بجيبه من بهايم الحاج عبد الستار، وأعمل منه الجبنة القديمة اللي الزقازيق كلها بتيجي تشتريها. الحاج مرسي بيبيع منها في البقالة كمان. كل ده عشان بنتي نادية — نفسي أشوفها دكتورة، وعشان كده بقف في الشمس من الفجر ومش بحس بتعب خالص.',
+    place: '🧀 وسط البلد — جنب مسجد القيني' },
+  { name: 'الأسطى رمضان', job: 'سواق توك توك — خطيب سلمى', avatar: '🧔', home: [29, -321], galabeya: false,
+    links: ['سلمى', 'عم صلاح المكوجي', 'دكتورة هبة', 'عم رزق', 'حسن الكهربائي'],
+    story: 'مخطوب سلمى بنت عم صلاح المكوجي — عشان كده هدومي مكوية ببلاش 😄. كل صبح بوصّل دكتورة هبة للصيدلية، وابن خالتي حسن الكهربائي ركبلي مسجل في التوك توك البلد كلها بتسمعه. وعم رزق بتاع الميكروباص فاكر نفسه أسرع مني — طب ما نتقابل في زحمة المحطة ونشوف!',
+    place: '🛺 بيلف من القيني للمحطة' },
+  { name: 'مستر السيد', job: 'مدرس لغة إنجليزية', avatar: '👨‍🏫', home: [-259, -409], galabeya: false,
+    links: ['نادية', 'أبلة فايزة', 'أشرف القهوجي', 'دكتورة هبة', 'كابتن كريم'],
+    story: 'نادية أشطر طالبة درّستلها — زي ما كانت دكتورة هبة زمان، درّستلها في ثانوي وبقت صيدلانية البلد. أبلة فايزة مديرة مدرسة البنات بتوصيني عليها. وكريم بقوله: ذاكر والعب، الاتنين ينفع. وبعد الدروس بقعد عند صاحب عمري أشرف على القهوة.',
+    place: '🏫 بيدّي دروس في حي الزاوية' },
+  { name: 'دكتورة هبة', job: 'صيدلانية', avatar: '👩‍⚕️', home: [500, 540], galabeya: false,
+    links: ['دكتور أحمد', 'الأسطى رمضان', 'مستر السيد', 'الممرضة سعاد'],
+    story: 'صيدليتي قدام مستشفى القنايات المركزي. دكتور أحمد بيبعتلي روشتات مرضاه، وساعات بيقف قدام الصيدلية يتكلم في أي حاجة ومفيش روشتة أصلًا... الممرضة سعاد بتغمزلي وبتقول «في خطوبة جاية» 😄. أنا رجعت القنايات بعد التخرج عشان البلد اللي ربتني أولى بيا.',
+    place: '💊 صيدليتها قدام المستشفى المركزي' },
+  { name: 'عم صلاح المكوجي', job: 'مكوجي — والد سلمى', avatar: '👨‍🔧', home: [60, -280], galabeya: true,
+    links: ['سلمى', 'الأسطى رمضان', 'حسن الكهربائي'],
+    story: 'بنتي سلمى هتتخطب للأسطى رمضان — راجل ابن حلال حتى لو التوك توك بتاعه دوشة على ودني من الصبح. المكوة باظت الأسبوع اللي فات، حسن الكهربائي صلحهالي في ساعة ورفض ياخد مليم — قلت له هكويلك هدومك سنة ببلاش. وبدلة فرح سلمى هكويها بإيدي دي.',
+    place: '👔 دكانه في حي القيني — ٤٠ سنة' },
+  { name: 'الشيخ محمود', job: 'مؤذن مسجد القواس', avatar: '🧕', home: [412, -387], galabeya: true,
+    links: ['الحاج عبد الستار', 'أشرف القهوجي', 'كابتن كريم'],
+    story: 'بقالي ٢٥ سنة بأذّن في مسجد القواس، وصوتي زمان كان بيوصل بهنباي من غير ميكروفون! بحفّظ العيال قرآن بعد العصر — منهم حسن ابن أشرف القهوجي، حافظ تلات أجزاء ماشاء الله. والحاج عبد الستار صاحب عمري — قلت له سيب كريم يلعب كورة، الرزق مش غيط بس.',
+    place: '🕌 مسجد القواس — حي القواس' },
+  { name: 'كابتن كريم', job: 'لاعب كرة — ابن الحاج عبد الستار', avatar: '⚽', home: [10, 409], galabeya: false,
+    links: ['الحاج عبد الستار', 'مستر السيد', 'أشرف القهوجي'],
+    story: 'أبويا عايزني في الغيط وأنا حلمي الأهلي — والشيخ محمود وقف في صفي الله يكرمه! بتمرن كل يوم في ملعب مركز الشباب وبنحجز ملعب روما بالليل. لما جبت جون في دوري المركز، قهوة أشرف كلها قامت تهتف باسمي. ومستر السيد قالي: ذاكر والعب يا كريم — وأنا سامع كلامه.',
+    place: '⚽ ملعب مركز شباب القنايات' },
+  { name: 'نادية', job: 'طالبة ثانوية — بنت أم محمد', avatar: '👩‍🎓', home: [-180, 140], galabeya: false,
+    links: ['أم محمد', 'مستر السيد', 'سلمى', 'أبلة فايزة', 'عم رزق'],
+    story: 'أمي بتقف في الشمس من الفجر تبيع جبنة عشان دروسي — مش هضيع تعبها أبدًا. باخد دروس عند مستر السيد، وأبلة فايزة بتقول عليا «ذهب». بركب مع عم رزق للدروس وبينزلني قدام البيت بالظبط. وسلمى صاحبتي بتخيط فستان خطوبتها وأنا بساعدها في التطريز!',
+    place: '📚 حي المساكن' },
+  { name: 'عم سيد أبو كارو', job: 'بياع خضار', avatar: '🥬', home: [-100, 0], galabeya: true,
+    links: ['الحاج عبد الستار', 'عم فتحي الجزار', 'أم محمد'],
+    story: 'الطماطم من غيط الحاج عبد الستار على طول — من الأرض للعربية لبيتك. عم فتحي الجزار بياخد مني البقدونس والجرجير لمحله كل يوم. وبحط الكارو جنب أم محمد في السوق: هي بالجبنة وأنا بالخضار، بقالنا عشرين سنة جيران رزق.',
+    place: '🍅 بيلف شوارع المدينة كلها' },
+  { name: 'الحاجة زينب', job: 'صاحبة فرن بلدي', avatar: '🍞', home: [-354, 365], galabeya: true,
+    links: ['سلمى', 'الأسطى رمضان', 'الممرضة سعاد', 'عم فتحي الجزار'],
+    story: 'الفرن ده ورثته عن أمي الله يرحمها، جنب مسجد أبو هلال. كحك خطوبة سلمى ورمضان أنا اللي هخبزه — وعملت لعم فتحي رقاق باللحمة الأسبوع اللي فات قالي عليه يجنن. والممرضة سعاد جارتي بتعدي عليا كل ليلة بعد الشيفت تطمن عليا، دي بقت زي بنتي.',
+    place: '🔥 جنب مسجد أبو هلال' },
+  { name: 'أشرف القهوجي', job: 'صاحب قهوة «صحبة الخير»', avatar: '☕', home: [150, 60], galabeya: false,
+    links: ['مستر السيد', 'كابتن كريم', 'دكتور أحمد', 'الشيخ محمود'],
+    story: 'القهوة دي مجلس البلد الرسمي — هنا بتتحل مشاكل القنايات على كوباية شاي وطاولة دومينو. ابني حسن بيحفظ قرآن عند الشيخ محمود. دكتور أحمد بييجي بعد الشيفت يشرب نعناع ويبص ناحية الصيدلية — أنا عارف سره بس مش هقول 😄. وماتشات كريم بنتفرج عليها هنا كلنا.',
+    place: '☕ على الشارع الرئيسي' },
+  { name: 'سلمى', job: 'خياطة — بنت عم صلاح وخطيبة رمضان', avatar: '👰', home: [80, -260], galabeya: false,
+    links: ['الأسطى رمضان', 'عم صلاح المكوجي', 'نادية', 'الحاجة زينب'],
+    story: 'شغالة في مشغل خياطة، وبخيط فستان خطوبتي بإيدي — العروسة وبتخيط فستانها، مين قدي! أبويا عم صلاح أول ما رمضان جه يخطبني قاله: «ابن حلال، بس هدي السرعة بالتوك توك». نادية صاحبتي بتساعدني في التطريز، والحاجة زينب وعدتنا بصاجات كحك للفرح.',
+    place: '🪡 مشغل الخياطة — حي القيني' },
+  { name: 'دكتور أحمد', job: 'طبيب باطنة بالمستشفى المركزي', avatar: '👨‍⚕️', home: [527, 520], galabeya: false,
+    links: ['دكتورة هبة', 'الممرضة سعاد', 'أشرف القهوجي'],
+    story: 'شيفتات المستشفى المركزي طويلة بس البلد دي تستاهل. بعد الشغل بشرب نعناع عند أشرف، وبعدين... بمر على الصيدلية أسلم على دكتورة هبة. سعاد بتقولي «اتقدم بقى يا دكتور، البلد كلها مستنية» — وأنا فعلًا ناوي قريب، بس متقولوش لحد.',
+    place: '🏥 مستشفى القنايات المركزي' },
+  { name: 'عم فتحي الجزار', job: 'جزار', avatar: '🥩', home: [60, -40], galabeya: true,
+    links: ['عم سيد أبو كارو', 'الحاجة زينب', 'الحاج مرسي'],
+    story: 'محل اللحمة ده من أيام أبويا — أهم يوم عندي وقفة العيد، الطابور بيلف الشارع. الخضرة والبقدونس بجيبهم من عم سيد أبو كارو. الحاجة زينب عملتلي رقاق باللحمة يتاكل وراه الصوابع. والحاج مرسي جاري في السوق — بنقفل مع بعض كل ليلة ونرجع سوا.',
+    place: '🥩 محله جنب السوق' },
+  { name: 'حسن الكهربائي', job: 'كهربائي — ابن خالة رمضان', avatar: '🔌', home: [-150, 60], galabeya: false,
+    links: ['عم صلاح المكوجي', 'الأسطى رمضان', 'أشرف القهوجي'],
+    story: 'أي حاجة فيها كهربا في القنايات غالبًا أنا اللي صلحتها — من مكوة عم صلاح لكشافات قهوة أشرف. رمضان ابن خالتي، ركبتله مسجل في التوك توك دوشته بقت على البلد كلها 😄. حلمي أفتح محل أدوات كهربائية كبير على الشارع الرئيسي، وكل حاجة بحوشها ليه.',
+    place: '🔌 ورشته في المساكن' },
+  { name: 'أبلة فايزة', job: 'مديرة مدرسة البنات', avatar: '👩‍🏫', home: [-220, -300], galabeya: false,
+    links: ['مستر السيد', 'نادية', 'أم محمد'],
+    story: 'مديرة مدرسة البنات من ١٥ سنة — بنات القنايات دول بناتي كلهم. نادية بنت أم محمد هتشرف البلد، قلت لأمها: «بنتك دي ذهب، الشقا اللي بتشقيه مش رايح هدر». ومستر السيد أحسن مدرس اشتغل معايا، بس بقوله دايمًا: خفف الواجبات يا أستاذ، البنات هتتجنن 😄.',
+    place: '🏫 مدرسة البنات — حي الزاوية' },
+  { name: 'عم رزق', job: 'سواق ميكروباص — خط الزقازيق', avatar: '🚐', home: [0, 200], galabeya: true,
+    links: ['الأسطى رمضان', 'نادية', 'الحاج مرسي'],
+    story: 'خط الزقازيق ⇄ القنايات بقالي ٣٠ سنة — أعرف ركابي واحد واحد بأساميهم. نادية بتركب معايا للدروس وبنزلها قدام البيت بالظبط، دي أمانة. الحاج مرسي بيبعت معايا طلبيات البقالة من الزقازيق. ورمضان بتاع التوك توك بيقول إنه أسرع مني — يا حبيبي أنا على الدائري بطير طير!',
+    place: '🚐 الموقف — أول طريق الزقازيق' },
+  { name: 'الحاج مرسي', job: 'صاحب بقالة', avatar: '🛒', home: [354, -540], galabeya: true,
+    links: ['أم محمد', 'عم فتحي الجزار', 'عم رزق'],
+    story: 'البقالة دي فتحها أبويا سنة ٦٥ في حي الغمري. جبنة أم محمد القديمة عندي أحسن من أي جبنة مستوردة — بتخلص في يومها. الدفتر اللي عندي فيه سلف نص البلد، ومحدش بيروح من غير حاجته — الفلوس بتيجي آخر الشهر، إحنا بلد بتسند بعضها. وطلبياتي بتيجي مع عم رزق من الزقازيق.',
+    place: '🛒 بقالته في حي الغمري' },
+  { name: 'الممرضة سعاد', job: 'ممرضة بالمستشفى المركزي', avatar: '👩‍⚕️', home: [480, 480], galabeya: false,
+    links: ['دكتور أحمد', 'دكتورة هبة', 'الحاجة زينب'],
+    story: 'شغالة مع دكتور أحمد في المستشفى — وشايفة بعيني إنه بيتلكك أي تلكيكة عشان يعدي على صيدلية دكتورة هبة 😄. الاتنين مكسوفين والبلد كلها مستنية الفرحة دي. وبعد الشيفت بعدي على الحاجة زينب أطمن عليها وآخد رغيف سخن من الفرن — ريحته بتشيل تعب اليوم كله.',
+    place: '🏥 القنايات الجديدة' },
+];
+
+function makePerson(opts, withLabel = true) {
+  const g = new THREE.Group();
+  const skinMat = new THREE.MeshLambertMaterial({ color: opts.skinHex ?? SKIN[(Math.random()*SKIN.length)|0] });
+  const clothMat = new THREE.MeshLambertMaterial({ color: opts.clothHex ?? CLOTH[(Math.random()*CLOTH.length)|0] });
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 10), skinMat);
+  head.position.y = 2.35; head.castShadow = true; g.add(head);
+  if (opts.galabeya) {
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.62, 1.9, 8), clothMat);
+    body.position.y = 1.05; body.castShadow = true; g.add(body);
+    const turban = new THREE.Mesh(new THREE.SphereGeometry(0.36, 8, 8, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshLambertMaterial({ color: 0xf5f0e0 }));
+    turban.position.y = 2.45; g.add(turban);
+  } else {
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.4, 1.0, 8), clothMat);
+    torso.position.y = 1.55; torso.castShadow = true; g.add(torso);
+    const pantsMat = new THREE.MeshLambertMaterial({ color: 0x2e3440 });
+    [-0.16, 0.16].forEach((px, li) => {
+      const hip = new THREE.Group(); hip.position.set(px, 1.05, 0);
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.11, 1.0, 6), pantsMat);
+      leg.position.y = -0.5; leg.castShadow = true; hip.add(leg);
+      g.userData['leg' + li] = hip; g.add(hip);
+    });
+  }
+  [-0.46, 0.46].forEach((px, ai) => {
+    const sh = new THREE.Group(); sh.position.set(px, 1.95, 0);
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.85, 6), opts.galabeya ? clothMat : skinMat);
+    arm.position.y = -0.42; sh.add(arm);
+    g.userData['arm' + ai] = sh; g.add(sh);
+  });
+  if (withLabel && opts.name) {
+    const label = textSprite((opts.isPlayer ? '🎮 ' : '') + opts.name, opts.labelColor || '#ffd97a', 26);
+    label.scale.set(13, 3.2, 1);
+    label.position.y = 3.6;
+    g.add(label);
+  }
+  g.scale.setScalar(3.1);
+  return g;
+}
+
+function nearestWay(x, z, classes, minLen = 50) {
+  let best = null, bestD = Infinity;
+  for (const w of WAYS) {
+    if (!classes.includes(w.cls) || w.len < minLen) continue;
+    const m = w.pts[w.pts.length >> 1];
+    const d = Math.hypot(m.x - x, m.z - z);
+    if (d < bestD) { bestD = d; best = w; }
+  }
+  return best;
+}
+
+const people = [];
+function spawnPeople() {
+  PEOPLE_DEFS.forEach((def, i) => {
+    const w = nearestWay(def.home[0], def.home[1], ['residential', 'unclassified'], 60);
+    const mesh = makePerson({ name: def.name, galabeya: def.galabeya, clothHex: CLOTH[i % CLOTH.length], skinHex: SKIN[i % SKIN.length] }, true);
+    mesh.userData.person = def;
+    scene.add(mesh);
+    people.push({ mesh, pts: w.pts, seg: 0, t: rnd(), dir: 1, speed: 5.5 + rnd()*2.5, phase: rnd()*7 });
+  });
+}
+
+const crowd = [];
+let crowdBody, crowdHead;
+const crowdDummy = new THREE.Object3D();
+function spawnCrowd() {
+  const N = 120;
+  const walkable = WAYS.filter(w => ['residential', 'unclassified', 'tertiary'].includes(w.cls) && w.len > 70);
+  const bodyGeo = new THREE.CylinderGeometry(0.33, 0.58, 1.9, 7);
+  bodyGeo.translate(0, 0.95, 0);
+  const headGeo = new THREE.SphereGeometry(0.33, 8, 8);
+  headGeo.translate(0, 2.3, 0);
+  crowdBody = new THREE.InstancedMesh(bodyGeo, new THREE.MeshLambertMaterial({ color: 0xffffff }), N);
+  crowdHead = new THREE.InstancedMesh(headGeo, new THREE.MeshLambertMaterial({ color: 0xffffff }), N);
+  const C = new THREE.Color();
+  for (let i = 0; i < N; i++) {
+    const w = walkable[(rnd()*walkable.length)|0];
+    crowd.push({
+      pts: w.pts, seg: (rnd()*(w.pts.length-1))|0, t: rnd(),
+      dir: rnd() < 0.5 ? 1 : -1, speed: 4.5 + rnd()*3.5, phase: rnd()*7,
+      scale: 2.7 + rnd()*0.7, x: 0, z: 0, ry: 0,
+    });
+    crowdBody.setColorAt(i, C.setHex(CLOTH[(rnd()*CLOTH.length)|0]).multiplyScalar(0.85 + rnd()*0.3));
+    crowdHead.setColorAt(i, C.setHex(SKIN[(rnd()*SKIN.length)|0]));
+  }
+  crowdBody.castShadow = crowdHead.castShadow = true;
+  scene.add(crowdBody, crowdHead);
+}
+
+/* ================= العربيات ================= */
+function makeCar(def) {
+  const g = new THREE.Group();
+  const c = new THREE.MeshLambertMaterial({ color: def.color });
+  const wheelMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+  if (def.type === 'tuktuk') {
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.5, 2.4), c);
+    body.position.y = 1.2; body.castShadow = true; g.add(body);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.2, 2.5), new THREE.MeshLambertMaterial({ color: 0xe8b430 }));
+    roof.position.y = 2.05; g.add(roof);
+    [[0, 1.1], [-0.7, -0.9], [0.7, -0.9]].forEach(([x, z]) => {
+      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.25, 8), wheelMat);
+      w.rotation.z = Math.PI/2; w.position.set(x, 0.35, z); g.add(w);
+    });
+  } else {
+    const long = def.type === 'microbus' ? 5.4 : 4.2;
+    const body = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.1, long), c);
+    body.position.y = 0.95; body.castShadow = true; g.add(body);
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.85, long * (def.type === 'microbus' ? 0.85 : 0.5)), new THREE.MeshLambertMaterial({ color: def.type === 'microbus' ? 0xdddddd : 0xbcd8ea }));
+    cab.position.set(0, 1.85, def.type === 'microbus' ? 0 : -0.2); cab.castShadow = true; g.add(cab);
+    [[-1, 1.4], [1, 1.4], [-1, -1.4], [1, -1.4]].forEach(([x, z]) => {
+      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.3, 8), wheelMat);
+      w.rotation.z = Math.PI/2; w.position.set(x, 0.42, z); g.add(w);
+    });
+    if (def.type === 'microbus') {
+      const sign = textSprite('الزقازيق ⇄ القنايات', '#ffd97a', 26);
+      sign.scale.set(11, 2.7, 1); sign.position.y = 3.4; g.add(sign);
+    }
+  }
+  g.scale.setScalar(2.1);
+  return g;
+}
+const cars = [];
+function spawnCars() {
+  const carColors = [0xc23b3b, 0x3567b0, 0x444448, 0x9aa7b8, 0x76583a, 0x2e6e52];
+  const mains = WAYS.filter(w => ['trunk', 'primary', 'tertiary', 'trunk_link'].includes(w.cls) && w.len > 200);
+  const locals = WAYS.filter(w => w.cls === 'residential' && w.len > 150);
+  for (let i = 0; i < 14; i++) {
+    const w = mains[(rnd()*mains.length)|0];
+    const type = rnd() < 0.3 ? 'microbus' : 'car';
+    const mesh = makeCar({ type, color: carColors[(rnd()*carColors.length)|0] });
+    scene.add(mesh);
+    cars.push({ mesh, pts: w.pts, seg: (rnd()*(w.pts.length-1))|0, t: rnd(), dir: rnd() < 0.5 ? 1 : -1, speed: w.cls === 'trunk' ? 38 : 26 });
+  }
+  for (let i = 0; i < 10; i++) {
+    const w = locals[(rnd()*locals.length)|0];
+    const mesh = makeCar({ type: 'tuktuk', color: [0x222222, 0xd8a430, 0x16486e][(rnd()*3)|0] });
+    scene.add(mesh);
+    cars.push({ mesh, pts: w.pts, seg: (rnd()*(w.pts.length-1))|0, t: rnd(), dir: 1, speed: 14 + rnd()*4 });
+  }
+}
+
+function moveAlong(st, dt) {
+  const pts = st.pts;
+  let guard = 0;
+  while (dt > 0 && guard++ < 8) {
+    const i0 = st.seg, i1 = st.seg + 1;
+    const a = pts[i0], b = pts[i1];
+    const segLen = Math.hypot(b.x - a.x, b.z - a.z) || 0.001;
+    const remain = st.dir > 0 ? (1 - st.t) * segLen : st.t * segLen;
+    const step = st.speed * dt;
+    if (step < remain) {
+      st.t += (st.dir * step) / segLen;
+      dt = 0;
+    } else {
+      dt -= remain / st.speed;
+      if (st.dir > 0) {
+        if (i1 >= pts.length - 1) { st.dir = -1; st.t = 1; }
+        else { st.seg++; st.t = 0; }
+      } else {
+        if (i0 <= 0) { st.dir = 1; st.t = 0; }
+        else { st.seg--; st.t = 1; }
+      }
+    }
+  }
+  const a = pts[st.seg], b = pts[st.seg + 1];
+  st.x = a.x + (b.x - a.x) * st.t;
+  st.z = a.z + (b.z - a.z) * st.t;
+  const dx = (b.x - a.x) * st.dir, dz = (b.z - a.z) * st.dir;
+  if (dx*dx + dz*dz > 0.0001) st.ry = Math.atan2(dx, dz);
+}
+
+/* ================= توست ================= */
+function toast(html, { actions = [], timeout = 6000 } = {}) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  const span = document.createElement('span');
+  span.innerHTML = html;
+  el.appendChild(span);
+  for (const a of actions) {
+    const b = document.createElement('button');
+    b.className = 'btn ' + (a.cls || '');
+    b.textContent = a.label;
+    b.onclick = () => { el.remove(); a.fn?.(); };
+    el.appendChild(b);
+  }
+  $('toasts').appendChild(el);
+  if (timeout) setTimeout(() => el.remove(), timeout);
+  return el;
+}
+
+/* ================= اللاعب ================= */
+let profile = null;       // {user, role, style, color, contacts}
+const me = { joined: false, id: null, x: 0, z: -60, ry: 0, mesh: null, walkTarget: null, routeTarget: null, moving: false, riding: false };
+let myVehicle = null, summoning = false;
+const keys = {};
+addEventListener('keydown', e => {
+  if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+  keys[e.key.toLowerCase()] = true;
+  if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase())) e.preventDefault();
+});
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const dropRing = new THREE.Mesh(new THREE.RingGeometry(3, 4.4, 32), new THREE.MeshBasicMaterial({ color: 0x7ce0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
+dropRing.rotation.x = -Math.PI/2; dropRing.position.y = 0.45; dropRing.visible = false;
+scene.add(dropRing);
+
+function tryMove(nx, nz) {
+  const sx = me.x, sz = me.z;
+  const dist = Math.hypot(nx - sx, nz - sz);
+  const steps = Math.max(1, Math.ceil(dist / 1.5));
+  const radius = me.riding ? 4.6 : 2.6;
+  let moved = false;
+  for (let i = 1; i <= steps; i++) {
+    const tx = sx + (nx - sx) * i / steps;
+    const tz = sz + (nz - sz) * i / steps;
+    if (canStand(tx, tz, radius)) { me.x = tx; me.z = tz; moved = true; continue; }
+    if (canStand(tx, me.z, radius)) { me.x = tx; moved = true; continue; }
+    if (canStand(me.x, tz, radius)) { me.z = tz; moved = true; continue; }
+    return moved;
+  }
+  return moved;
+}
+function setMoveTarget(x, z) {
+  const t = { x: Math.max(-1700, Math.min(1700, x)), z: Math.max(-1700, Math.min(1700, z)) };
+  me.routeTarget = { ...t };
+  me.walkTarget = { ...t, final: true };
+}
+function pickDetourTarget(dx, dz) {
+  const base = Math.atan2(dx, dz);
+  const route = me.routeTarget || me.walkTarget;
+  const radius = me.riding ? 4.6 : 2.6;
+  const angles = [35, -35, 60, -60, 90, -90, 125, -125, 160, -160].map(a => a * Math.PI / 180);
+  let best = null, bestScore = Infinity;
+  for (const dist of [18, 30, 46, 64]) {
+    for (const a of angles) {
+      const ang = base + a;
+      const x = me.x + Math.sin(ang) * dist;
+      const z = me.z + Math.cos(ang) * dist;
+      if (!canStand(x, z, radius)) continue;
+      const score = route ? Math.hypot(route.x - x, route.z - z) + Math.abs(a) * 12 : Math.abs(a);
+      if (score < bestScore) { bestScore = score; best = { x, z, final: false }; }
+    }
+    if (best) return best;
+  }
+  return null;
+}
+
+function updateMe(dt, t) {
+  if (!me.mesh) return;
+  let vx = 0, vz = 0;
+  const fwd = new THREE.Vector3();
+  if (cameraMode === 'free') camera.getWorldDirection(fwd);
+  else fwd.set(Math.sin(me.ry), 0, Math.cos(me.ry));
+  fwd.y = 0; fwd.normalize();
+  const right = new THREE.Vector3(fwd.z, 0, -fwd.x);
+  if (keys['arrowup'] || keys['w']) { vx += fwd.x; vz += fwd.z; }
+  if (keys['arrowdown'] || keys['s']) { vx -= fwd.x; vz -= fwd.z; }
+  if (keys['arrowright'] || keys['d']) { vx -= right.x; vz -= right.z; }
+  if (keys['arrowleft'] || keys['a']) { vx += right.x; vz += right.z; }
+  const keyMove = vx !== 0 || vz !== 0;
+  const baseSpeed = me.riding ? 42 : (keys['shift'] ? 26 : 13);
+  if (keyMove) {
+    me.walkTarget = null;
+    me.routeTarget = null;
+    const L = Math.hypot(vx, vz);
+    const nx = me.x + vx / L * baseSpeed * dt;
+    const nz = me.z + vz / L * baseSpeed * dt;
+    tryMove(nx, nz);
+    me.ry = Math.atan2(vx, vz);
+    me.moving = true;
+  } else if (me.walkTarget) {
+    const dx = me.walkTarget.x - me.x, dz = me.walkTarget.z - me.z;
+    const d = Math.hypot(dx, dz);
+    if (d < 1.5) {
+      if (!me.walkTarget.final && me.routeTarget) me.walkTarget = { ...me.routeTarget, final: true };
+      else { me.walkTarget = null; me.routeTarget = null; me.moving = false; }
+    }
+    else {
+      const sp = me.riding ? Math.min(60, 42 + d*0.05) : Math.min(30, 14 + d * 0.05);
+      const ok = tryMove(me.x + dx / d * sp * dt, me.z + dz / d * sp * dt);
+      if (!ok) {
+        const detour = pickDetourTarget(dx, dz);
+        if (detour) me.walkTarget = detour;
+        else { me.walkTarget = null; me.routeTarget = null; me.moving = false; }
+      }
+      else { me.ry = Math.atan2(dx, dz); me.moving = true; }
+    }
+  } else me.moving = false;
+  me.x = Math.max(-1700, Math.min(1700, me.x));
+  me.z = Math.max(-1700, Math.min(1700, me.z));
+  const baseY = me.riding ? 1.7 : (me.moving ? Math.abs(Math.sin(t * 8)) * 0.25 : 0);
+  me.mesh.position.set(me.x, baseY, me.z);
+  me.mesh.rotation.y = me.ry;
+  const sw = (me.moving && !me.riding) ? Math.sin(t * 8) * 0.6 : 0;
+  const u = me.mesh.userData;
+  if (u.leg0) { u.leg0.rotation.x = sw; u.leg1.rotation.x = -sw; }
+  if (u.arm0) { u.arm0.rotation.x = -sw * 0.7; u.arm1.rotation.x = sw * 0.7; }
+  /* العربية بتاعتي */
+  if (myVehicle) {
+    if (summoning) {
+      const dx = me.x - myVehicle.position.x, dz = me.z - myVehicle.position.z;
+      const d = Math.hypot(dx, dz);
+      if (d < 5) {
+        summoning = false;
+        me.riding = true;
+        $('rideBtn').textContent = '⬇ انزل من العربية';
+        toast('🛺 اركب! وصلت العربية — دلوقتي بتطير في البلد', { timeout: 4000 });
+      } else {
+        myVehicle.position.x += dx / d * 50 * dt;
+        myVehicle.position.z += dz / d * 50 * dt;
+        myVehicle.rotation.y = Math.atan2(dx, dz);
+      }
+    } else if (me.riding) {
+      myVehicle.position.set(me.x, 0, me.z);
+      myVehicle.rotation.y = me.ry;
+    }
+  }
+}
+
+/* زر العربية */
+$('rideBtn').onclick = () => {
+  if (!me.mesh) return;
+  if (me.riding) {
+    me.riding = false;
+    if (myVehicle) myVehicle.visible = false;
+    $('rideBtn').textContent = '🛺 استدعي عربية';
+    return;
+  }
+  if (summoning) return;
+  if (!myVehicle) {
+    myVehicle = makeCar({ type: 'tuktuk', color: 0xd8a430 });
+    scene.add(myVehicle);
+  }
+  myVehicle.visible = true;
+  myVehicle.position.set(me.x + 70, 0, me.z + 30);
+  summoning = true;
+  $('rideBtn').textContent = '🛺 العربية جاية...';
+  toast('🛺 استدعينا لك توك توك — ثواني ويوصل', { timeout: 3000 });
+};
+
+/* ================= الشبكة ================= */
+const remotes = new Map();
+let ws = null, wsOk = false, authed = false, soloMode = false;
+const onlineEl = $('online');
+function wsSend(m) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); }
+function setOnlineUI() {
+  const n = remotes.size + (me.joined && wsOk ? 1 : 0);
+  onlineEl.textContent = soloMode ? '🧍 وضع فردي' : (wsOk ? `🟢 متصل — ${n} في المدينة` : '🔴 غير متصل');
+}
+
+function addRemote(p) {
+  if (remotes.has(p.id)) return;
+  const mesh = makePerson({ name: p.name, galabeya: p.style === 'galabeya', clothHex: parseInt(p.color.slice(1), 16), labelColor: p.role === 'admin' ? '#ff9c9c' : '#7ce0ff', isPlayer: true }, true);
+  mesh.userData.playerId = p.id;
+  mesh.position.set(p.x, 0, p.z);
+  scene.add(mesh);
+  const vehicle = makeCar({ type: 'tuktuk', color: 0xd8a430 });
+  vehicle.visible = false;
+  scene.add(vehicle);
+  remotes.set(p.id, { mesh, vehicle, name: p.name, x: p.x, z: p.z, ry: p.ry || 0, tx: p.x, tz: p.z, try_: p.ry || 0, ride: p.ride || 0, phase: Math.random()*7 });
+  setOnlineUI();
+}
+function removeRemote(id) {
+  const r = remotes.get(id);
+  if (r) { scene.remove(r.mesh); scene.remove(r.vehicle); remotes.delete(id); }
+  if (callPeer === id) endCall(false);
+  setOnlineUI();
+}
+
+/* ---- المحلات ---- */
+let stores = [];
+const storeLabels = new Map();
+let citySettings = { news: { text: '', everyMinutes: 10, times: 3 }, education: { videoUrl: '', desc: '' } };
+let newsTimer = null, newsShown = 0;
+function applyStores(list) {
+  stores = list || [];
+  for (const [, sp] of storeLabels) scene.remove(sp);
+  storeLabels.clear();
+  for (const s of stores) {
+    const sp = textSprite('👁 🏪 ' + s.name, '#7ce69a', 30);
+    sp.scale.set(96, 24, 1);
+    sp.position.set(s.x, 26, s.z);
+    sp.userData.storeId = s.id;
+    scene.add(sp);
+    storeLabels.set(s.id, sp);
+  }
+  // حدّث لوحة المالك لو مفتوحة
+  if ($('storeOwn').classList.contains('open') && ownStore) {
+    const updated = stores.find(s => s.id === ownStore.id);
+    if (updated) { ownStore = updated; renderOwnStore(); }
+  }
+  renderMyStoreList();
+  updateNotifyBtn();
+}
+function applySettings(settings = {}) {
+  citySettings = {
+    news: { ...citySettings.news, ...(settings.news || {}) },
+    education: { ...citySettings.education, ...(settings.education || {}) },
+  };
+  scheduleNewsTicker(true);
+  updateEducationPanel();
+}
+function scheduleNewsTicker(reset = false) {
+  clearTimeout(newsTimer);
+  const text = String(citySettings.news?.text || '').trim();
+  if (reset) newsShown = 0;
+  $('newsTicker').classList.remove('show');
+  if (!text) return;
+  const every = Math.max(1, Number(citySettings.news.everyMinutes) || 10) * 60000;
+  const maxTimes = Math.max(1, Number(citySettings.news.times) || 3);
+  const show = () => {
+    if (newsShown >= maxTimes) return;
+    newsShown++;
+    $('newsText').textContent = '📣 ' + text;
+    $('newsTicker').classList.add('show');
+    setTimeout(() => $('newsTicker').classList.remove('show'), 20000);
+    if (newsShown < maxTimes) newsTimer = setTimeout(show, every);
+  };
+  show();
+}
+function videoEmbedUrl(url) {
+  const u = String(url || '').trim();
+  if (!u) return '';
+  const yt = u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{6,})/);
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
+  return u;
+}
+function isDirectVideo(url) {
+  return /\.(mp4|webm|ogg|mov)(\?|#|$)/i.test(String(url || ''));
+}
+function updateEducationPanel() {
+  if (!$('eduDesc')) return;
+  $('eduDesc').textContent = citySettings.education?.desc || 'مجمع تعليمي بالقنايات.';
+  const raw = String(citySettings.education?.videoUrl || '').trim();
+  const mode = citySettings.education?.mode === 'live' ? 'live' : 'recorded';
+  const liveOn = !!citySettings.education?.liveOn;
+  $('eduFrame').style.display = 'none';
+  $('eduVideo').style.display = 'none';
+  $('eduFrame').src = '';
+  $('eduVideo').pause();
+  $('eduVideo').removeAttribute('src');
+  $('eduModeNote').textContent = mode === 'live'
+    ? (liveOn ? '🔴 بث مباشر: الأدمن فقط يتحكم في البداية، وكل الناس تشاهد نفس الدقيقة.' : '⚫ البث المباشر متوقف حاليًا.')
+    : '🎬 فيديو مسجل: كل مستخدم يقدر يشغل ويوقف ويتحكم في الدقيقة بنفسه.';
+  $('eduEmpty').style.display = raw && (mode === 'recorded' || liveOn) ? 'none' : '';
+  if (!raw || (mode === 'live' && !liveOn)) return;
+  if (isDirectVideo(raw)) {
+    $('eduVideo').src = raw;
+    $('eduVideo').controls = mode === 'recorded';
+    $('eduVideo').style.display = '';
+    if (mode === 'live') {
+      const offset = Math.max(0, (Date.now() - Number(citySettings.education.liveStartedAt || 0)) / 1000);
+      $('eduVideo').addEventListener('loadedmetadata', () => {
+        if (Number.isFinite($('eduVideo').duration)) $('eduVideo').currentTime = Math.min(offset, Math.max(0, $('eduVideo').duration - 1));
+        $('eduVideo').play().catch(() => {});
+      }, { once: true });
+    }
+  } else {
+    const src = videoEmbedUrl(raw);
+    $('eduFrame').style.display = '';
+    $('eduFrame').src = mode === 'live' && src.includes('youtube.com/embed/') ? src + '?autoplay=1' : src;
+  }
+}
+function openEducation() {
+  updateEducationPanel();
+  $('eduPanel').classList.add('open');
+}
+function storeAt(x, z) {
+  return stores.find(s => Math.hypot(s.x - x, s.z - z) < 8);
+}
+function myStores() {
+  return profile ? stores.filter(s => s.owner === profile.user) : [];
+}
+function renderMyStoreList() {
+  const box = $('myStoreList');
+  if (!box || !profile) return;
+  const mine = myStores();
+  box.innerHTML = mine.length ? '' : '<div style="font-size:12px;color:#8fa8bb">لسه مفيش محلات مربوطة بحسابك</div>';
+  mine.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'storeJump';
+    row.innerHTML = `<button class="iconBtn" title="فتح المحل">👁</button><b>${esc(s.name)}</b><span style="margin-right:auto;color:#9fd0ff">${s.items?.length || 0} صنف</span>`;
+    row.querySelector('button').onclick = () => openOwnStore(s);
+    box.appendChild(row);
+  });
+}
+
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  try { ws = new WebSocket(`${proto}://${location.host}/ws`); } catch { onWSFail(); return; }
+  const failTimer = setTimeout(() => { if (!wsOk) { try { ws.close(); } catch {} onWSFail(); } }, 4000);
+  ws.onopen = () => {
+    clearTimeout(failTimer);
+    wsOk = true;
+    setOnlineUI();
+    const token = localStorage.getItem('qanayat-token');
+    if (token && !authed) wsSend({ t: 'login-token', token });
+    if (authed && me.joined) {
+      // إعادة اتصال
+      const token2 = localStorage.getItem('qanayat-token');
+      if (token2) wsSend({ t: 'login-token', token: token2 });
+    }
+  };
+  ws.onmessage = (ev) => {
+    let m; try { m = JSON.parse(ev.data); } catch { return; }
+    handleMsg(m);
+  };
+  ws.onclose = () => {
+    const was = wsOk;
+    wsOk = false;
+    setOnlineUI();
+    if (was && me.joined) {
+      chatSys('⚠ الاتصال اتقطع — بحاول أرجع...');
+      for (const id of [...remotes.keys()]) removeRemote(id);
+    }
+    if (!soloMode) setTimeout(connectWS, 3000);
+  };
+  ws.onerror = () => {};
+}
+function onWSFail() {
+  setOnlineUI();
+  const err = $('loginErr');
+  if (!authed && $('login').style.display !== 'none') {
+    err.textContent = '⚠ مش قادر أوصل للسيرفر — اتأكد إنه شغال (npm start)';
+    err.style.display = 'block';
+  }
+}
+
+async function handleMsg(m) {
+  switch (m.t) {
+    case 'auth-ok': {
+      authed = true;
+      profile = m.profile;
+      localStorage.setItem('qanayat-token', m.token);
+      $('login').style.display = 'none';
+      $('logoutBtn').style.display = '';
+      if (profile.role === 'admin') $('adminBtn').style.display = '';
+      updateNotifyBtn();
+      await enterCity();
+      break;
+    }
+    case 'auth-err':
+      if (!m.silent) {
+        const err = $('loginErr');
+        err.textContent = m.msg || 'حصل خطأ';
+        err.style.display = 'block';
+      }
+      break;
+    case 'welcome':
+      me.id = m.id;
+      m.players.forEach(addRemote);
+      applyStores(m.stores);
+      applySettings(m.settings);
+      setOnlineUI();
+      chatSys(`أهلًا ${profile.user}! انت دلوقتي في القنايات 🏙`);
+      $('chat').classList.add('show');
+      if (myStores().length) toast(`🏪 عندك ${myStores().length} محل في البلد — دوس عليه عشان تديره`, { timeout: 7000 });
+      break;
+    case 'player-joined':
+      addRemote(m.player);
+      chatSys(`🟢 ${m.player.name} دخل المدينة`);
+      break;
+    case 'player-left': {
+      const r = remotes.get(m.id);
+      if (r) chatSys(`🔴 ${r.name} خرج`);
+      removeRemote(m.id);
+      break;
+    }
+    case 'player-move': {
+      const r = remotes.get(m.id);
+      if (r) { r.tx = m.x; r.tz = m.z; r.try_ = m.ry; r.ride = m.ride || 0; }
+      break;
+    }
+    case 'chat':
+      if (m.private) {
+        if (!m.echo && m.from != null) {
+          setPrivTarget(m.from);
+          privateMsg(m.name, m.text);
+        }
+        break;
+      }
+      chatMsg(m.name, m.text, false);
+      break;
+    case 'npc-reply':
+      {
+        const box = $('npcMsgs');
+        const last = box.lastElementChild;
+        if (last?.textContent?.includes('بفكر شوية')) last.remove();
+      }
+      npcChatMsg(m.name || 'الشخصية', m.text, 'npc');
+      $('npcSend').disabled = false;
+      break;
+    case 'contact-request':
+      toast(`📇 <b>${m.name}</b> عايز يتبادل معاك الواتس/الفيس/الرقم`, {
+        timeout: 20000,
+        actions: [
+          { label: 'موافق ✓', cls: 'green', fn: () => wsSend({ t: 'contact-response', to: m.from, accept: true }) },
+          { label: 'رفض', cls: 'danger', fn: () => wsSend({ t: 'contact-response', to: m.from, accept: false }) },
+        ],
+      });
+      break;
+    case 'contact-share': {
+      const ct = m.contacts || {};
+      const lines = [
+        ct.wa ? `واتساب: <b dir="ltr">${ct.wa}</b>` : 'واتساب: —',
+        ct.fb ? `فيسبوك: <b>${ct.fb}</b>` : 'فيسبوك: —',
+        ct.phone ? `تليفون: <b dir="ltr">${ct.phone}</b>` : 'تليفون: —',
+      ];
+      toast(`✅ <b>${m.name}</b> شارك بياناته معاك:<br>${lines.join('<br>')}`, { timeout: 30000, actions: [{ label: 'تمام' }] });
+      chatSys(`📇 اتبادلتوا بيانات التواصل مع ${m.name}`);
+      break;
+    }
+    case 'contact-declined':
+      toast(`❌ ${m.name} رفض مشاركة بياناته`, { timeout: 5000 });
+      break;
+    case 'call-offer': onIncomingCall(m); break;
+    case 'call-answer': onCallAnswer(m); break;
+    case 'call-ice': if (pc && m.candidate) pc.addIceCandidate(m.candidate).catch(() => {}); break;
+    case 'call-decline':
+      toast(`📵 ${m.name} رفض المكالمة`, { timeout: 5000 });
+      endCall(false);
+      break;
+    case 'call-end':
+      toast('☎ المكالمة انتهت', { timeout: 4000 });
+      endCall(false);
+      break;
+    /* محلات */
+    case 'stores': applyStores(m.stores); break;
+    case 'settings':
+      applySettings(m.settings);
+      if (admData) admData.settings = m.settings;
+      if ($('adminPanel').classList.contains('open') && admTab === 'settingsT') renderAdminBody();
+      break;
+    case 'store-granted':
+      toast(`🏪 مبروك! الأدمن عملك محل «${m.store.name}» — دوس عليه في الخريطة عشان تديره`, { timeout: 10000 });
+      break;
+    case 'order-ok':
+      $('shopMsg').textContent = `✅ الأوردر اتبعت! رقم الأوردر #${m.order.id} — صاحب المحل هيكلمك`;
+      toast(`✅ أوردرك اتسجل: ${m.order.qty} × ${m.order.item}`, { timeout: 6000 });
+      break;
+    case 'new-order': {
+      const o = m.order;
+      notifyNewOrder(o);
+      break;
+    }
+    case 'store-orders': renderOwnOrders(m.orders); break;
+    /* أدمن */
+    case 'admin-data': renderAdmin(m); break;
+    case 'admin-ok':
+      toast('✅ ' + m.msg, { timeout: 4000 });
+      if ($('adminPanel').classList.contains('open')) wsSend({ t: 'admin-data' });
+      break;
+  }
+}
+
+async function enterCity() {
+  await startWorld();
+  // مكان آمن مش جوه مبنى
+  let sx = 0, sz = -60, tries = 0;
+  while (!canStand(sx, sz) && tries++ < 200) {
+    sx = -60 + Math.random()*120;
+    sz = -120 + Math.random()*120;
+  }
+  me.x = sx; me.z = sz;
+  me.mesh = makePerson({
+    name: profile.user, galabeya: profile.style === 'galabeya',
+    clothHex: parseInt(profile.color.slice(1), 16),
+    labelColor: profile.role === 'admin' ? '#ff9c9c' : '#aef4ff', isPlayer: true,
+  }, true);
+  me.mesh.position.set(me.x, 0, me.z);
+  scene.add(me.mesh);
+  me.joined = true;
+  controls.target.set(me.x, 4, me.z);
+  camera.position.set(me.x + 50, 55, me.z + 75);
+  $('rideBtn').style.display = 'block';
+  wsSend({ t: 'join', x: me.x, z: me.z });
+}
+
+let lastSent = { x: 0, z: 0, ry: 0, ride: 0, time: 0 };
+function netTick() {
+  if (!wsOk || !me.joined) return;
+  const now = performance.now();
+  if (now - lastSent.time < 100) return;
+  const rideF = me.riding ? 1 : 0;
+  if (Math.abs(me.x - lastSent.x) > 0.2 || Math.abs(me.z - lastSent.z) > 0.2 || Math.abs(me.ry - lastSent.ry) > 0.1 || rideF !== lastSent.ride) {
+    wsSend({ t: 'move', x: +me.x.toFixed(1), z: +me.z.toFixed(1), ry: +me.ry.toFixed(2), ride: rideF });
+    lastSent = { x: me.x, z: me.z, ry: me.ry, ride: rideF, time: now };
+  }
+}
+
+/* ================= الشات ================= */
+const chatMsgsEl = $('chatMsgs');
+const privateMsgsEl = $('privateMsgs');
+let privTarget = null;
+function chatMsg(name, text, priv) {
+  const d = document.createElement('div');
+  d.className = 'm' + (priv ? ' priv' : '');
+  d.innerHTML = `${priv ? '🔒 ' : ''}<b>${name}:</b> ${String(text).replace(/</g, '&lt;')}`;
+  chatMsgsEl.appendChild(d);
+  while (chatMsgsEl.children.length > 100) chatMsgsEl.firstChild.remove();
+  chatMsgsEl.scrollTop = chatMsgsEl.scrollHeight;
+}
+function privateMsg(name, text, sys = false) {
+  const d = document.createElement('div');
+  d.className = 'm' + (sys ? ' sys' : '');
+  d.innerHTML = sys ? String(text).replace(/</g, '&lt;') : `<b>${String(name).replace(/</g, '&lt;')}:</b> ${String(text).replace(/</g, '&lt;')}`;
+  privateMsgsEl.appendChild(d);
+  while (privateMsgsEl.children.length > 100) privateMsgsEl.firstChild.remove();
+  privateMsgsEl.scrollTop = privateMsgsEl.scrollHeight;
+}
+function chatSys(text) {
+  const d = document.createElement('div');
+  d.className = 'm sys';
+  d.textContent = text;
+  chatMsgsEl.appendChild(d);
+  chatMsgsEl.scrollTop = chatMsgsEl.scrollHeight;
+}
+function updateNotifyBtn() {
+  const btn = $('notifyBtn');
+  if (!btn) return;
+  btn.style.display = myStores().length ? '' : 'none';
+  if (!('Notification' in window)) {
+    btn.textContent = '🔔 تنبيهات داخلية';
+    return;
+  }
+  btn.textContent = Notification.permission === 'granted' ? '🔔 التنبيهات شغالة' : '🔔 فعل تنبيهات الأوردرات';
+}
+function notifyNewOrder(o) {
+  const text = `أوردر جديد على ${o.storeName}: ${o.qty} × ${o.item} من ${o.buyer.name}`;
+  toast(`📦 <b>أوردر جديد على محلك «${o.storeName}»</b>:<br>${o.qty} × ${o.item} — من ${o.buyer.name} (${o.buyer.phone || 'بدون رقم'})`, {
+    timeout: 25000,
+    actions: [
+      { label: 'فتح الأوردرات', cls: 'green', fn: () => {
+          const s = stores.find(x => x.id === o.storeId);
+          if (s) openOwnStore(s);
+        } },
+      { label: 'تمام' },
+    ],
+  });
+  chatSys(`📦 ${text}`);
+  try {
+    const oldTitle = document.title;
+    document.title = '📦 أوردر جديد!';
+    setTimeout(() => { document.title = oldTitle; }, 6000);
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const n = new Notification('أوردر جديد على محلك', { body: text, tag: `order-${o.id}` });
+      n.onclick = () => {
+        window.focus();
+        const s = stores.find(x => x.id === o.storeId);
+        if (s) openOwnStore(s);
+      };
+    }
+  } catch {}
+}
+let currentNPC = null;
+function npcChatMsg(name, text, who) {
+  const box = $('npcMsgs');
+  const d = document.createElement('div');
+  d.className = 'aiMsg ' + (who === 'me' ? 'me' : 'npc');
+  d.innerHTML = `<b>${String(name).replace(/</g, '&lt;')}:</b> ${String(text).replace(/</g, '&lt;')}`;
+  box.appendChild(d);
+  while (box.children.length > 30) box.firstChild.remove();
+  box.scrollTop = box.scrollHeight;
+}
+function sendNPCChat() {
+  const inp = $('npcInput');
+  const text = inp.value.trim();
+  if (!text || !currentNPC) return;
+  inp.value = '';
+  npcChatMsg('أنا', text, 'me');
+  if (!wsOk || !authed) {
+    npcChatMsg(currentNPC.name, 'لازم تدخل بحساب عشان أكلمك.', 'npc');
+    return;
+  }
+  $('npcSend').disabled = true;
+  npcChatMsg(currentNPC.name, 'بفكر شوية...', 'npc');
+  wsSend({
+    t: 'npc-chat',
+    npc: {
+      name: currentNPC.name,
+      job: currentNPC.job,
+      story: currentNPC.story,
+      links: currentNPC.links || [],
+    },
+    text,
+  });
+}
+function setPrivTarget(id) {
+  const wasOpen = $('privateChat').classList.contains('show');
+  const changed = privTarget !== id;
+  privTarget = id;
+  const r = remotes.get(id);
+  if (r) $('privName').textContent = r.name;
+  $('privateChat').classList.add('show');
+  if (r && (!wasOpen || changed)) privateMsg('', `بدأت شات خاص مع ${r.name}`, true);
+  $('privateInput').focus();
+}
+function sendChat() {
+  const inp = $('chatInput');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  if (!wsOk) { chatSys('⚠ مفيش اتصال بالسيرفر'); return; }
+  wsSend({ t: 'chat', text });
+  chatMsg('أنا', text, false);
+}
+function sendPrivateChat() {
+  const inp = $('privateInput');
+  const text = inp.value.trim();
+  if (!text || privTarget == null) return;
+  inp.value = '';
+  if (!wsOk || !remotes.has(privTarget)) { privateMsg('', '⚠ اللاعب مش متصل دلوقتي', true); return; }
+  wsSend({ t: 'chat', to: privTarget, text });
+  privateMsg('أنا', text);
+}
+$('chatSend').onclick = sendChat;
+$('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+$('chatHeader').onclick = () => $('chat').classList.toggle('min');
+$('privateSend').onclick = sendPrivateChat;
+$('privateInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendPrivateChat(); });
+$('privateHeader').onclick = e => { if (e.target.id !== 'privateClose') $('privateChat').classList.toggle('min'); };
+$('privateClose').onclick = e => { e.stopPropagation(); privTarget = null; $('privateChat').classList.remove('show'); };
+$('notifyBtn').onclick = async () => {
+  if (!('Notification' in window)) {
+    toast('🔔 التنبيهات الداخلية شغالة بالفعل داخل السيستم', { timeout: 5000 });
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    toast('🔔 تنبيهات الأوردرات شغالة', { timeout: 5000 });
+    return;
+  }
+  const res = await Notification.requestPermission();
+  updateNotifyBtn();
+  toast(res === 'granted' ? '🔔 تم تفعيل تنبيهات الأوردرات' : '🔔 هتوصلك التنبيهات داخل السيستم فقط', { timeout: 6000 });
+};
+
+/* ================= المكالمات ================= */
+let pc = null, localStream = null, callPeer = null;
+const remoteAudio = $('remoteAudio');
+const callBar = $('callBar');
+async function getMic() {
+  try { return await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch (e) {
+    toast('🎙 المتصفح منع المايك — لو فاتح من جهاز تاني على الشبكة لازم HTTPS أو افتح من localhost', { timeout: 9000 });
+    throw e;
+  }
+}
+function newPC(peerId) {
+  const p = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+  p.onicecandidate = e => { if (e.candidate) wsSend({ t: 'call-ice', to: peerId, candidate: e.candidate }); };
+  p.ontrack = e => { remoteAudio.srcObject = e.streams[0]; };
+  return p;
+}
+async function startCall(peerId) {
+  if (callPeer != null) { toast('انت في مكالمة بالفعل'); return; }
+  const r = remotes.get(peerId);
+  if (!r) return;
+  try { localStream = await getMic(); } catch { return; }
+  callPeer = peerId;
+  pc = newPC(peerId);
+  localStream.getTracks().forEach(tr => pc.addTrack(tr, localStream));
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  wsSend({ t: 'call-offer', to: peerId, sdp: offer });
+  $('callWith').textContent = `بنتصل بـ ${r.name}...`;
+  callBar.classList.add('show');
+}
+function onIncomingCall(m) {
+  if (callPeer != null) { wsSend({ t: 'call-decline', to: m.from }); return; }
+  toast(`📞 <b>${m.name}</b> بيتصل بيك صوتيًا`, {
+    timeout: 25000,
+    actions: [
+      { label: 'رد ✓', cls: 'green', fn: async () => {
+          try { localStream = await getMic(); } catch { wsSend({ t: 'call-decline', to: m.from }); return; }
+          callPeer = m.from;
+          pc = newPC(m.from);
+          localStream.getTracks().forEach(tr => pc.addTrack(tr, localStream));
+          await pc.setRemoteDescription(m.sdp);
+          const ans = await pc.createAnswer();
+          await pc.setLocalDescription(ans);
+          wsSend({ t: 'call-answer', to: m.from, sdp: ans });
+          $('callWith').textContent = `في مكالمة مع ${m.name}`;
+          callBar.classList.add('show');
+        } },
+      { label: 'رفض', cls: 'danger', fn: () => wsSend({ t: 'call-decline', to: m.from }) },
+    ],
+  });
+}
+async function onCallAnswer(m) {
+  if (!pc) return;
+  await pc.setRemoteDescription(m.sdp);
+  const r = remotes.get(callPeer);
+  $('callWith').textContent = `في مكالمة مع ${r?.name || ''}`;
+}
+function endCall(notify = true) {
+  if (notify && callPeer != null) wsSend({ t: 'call-end', to: callPeer });
+  pc?.close(); pc = null;
+  localStream?.getTracks().forEach(tr => tr.stop());
+  localStream = null;
+  remoteAudio.srcObject = null;
+  callPeer = null;
+  callBar.classList.remove('show');
+}
+$('callHang').onclick = () => endCall(true);
+
+/* ================= لوحات المحل ================= */
+let shopStore = null, shopItemSel = null;
+let ownStore = null;
+function openShop(store) {
+  shopStore = store;
+  shopItemSel = null;
+  $('shopName').textContent = '🏪 ' + store.name;
+  $('shopOwner').textContent = 'صاحب المحل: ' + store.owner;
+  $('shopSign').style.display = store.signImage ? '' : 'none';
+  if (store.signImage) $('shopSign').src = store.signImage;
+  $('shopDesc').style.display = store.desc ? '' : 'none';
+  $('shopDesc').textContent = store.desc || '';
+  const box = $('shopItems');
+  box.innerHTML = store.items.length ? '' : '<div style="font-size:13px;color:#8fa8bb;margin-top:6px">المحل لسه فاضي — صاحبه لسه محطش أصناف</div>';
+  store.items.forEach(it => {
+    const d = document.createElement('div');
+    d.className = 'itemRow';
+    const img = it.image ? `<img src="${esc(it.image)}" alt="">` : '';
+    d.innerHTML = `${img}<div class="itemText"><b>${esc(it.name)}</b>${it.desc ? `<div class="desc">${esc(it.desc)}</div>` : ''}</div><span class="price">${it.price} ج</span>`;
+    d.onclick = () => {
+      box.querySelectorAll('.itemRow').forEach(x => x.classList.remove('sel'));
+      d.classList.add('sel');
+      shopItemSel = it.id;
+    };
+    box.appendChild(d);
+  });
+  $('buyName').value = profile?.user || '';
+  $('buyPhone').value = profile?.contacts?.phone || profile?.contacts?.wa || '';
+  $('shopMsg').textContent = '';
+  closeSides();
+  $('shop').classList.add('open');
+}
+$('buyBtn').onclick = () => {
+  if (!shopStore) return;
+  if (shopItemSel == null) { $('shopMsg').textContent = '⚠ اختار صنف الأول'; return; }
+  if (!$('buyPhone').value.trim()) { $('shopMsg').textContent = '⚠ اكتب رقم تليفونك عشان صاحب المحل يكلمك'; return; }
+  wsSend({
+    t: 'order', storeId: shopStore.id, itemId: shopItemSel,
+    qty: Number($('shopQty').value) || 1,
+    buyer: { name: $('buyName').value.trim(), phone: $('buyPhone').value.trim(), address: $('buyAddr').value.trim(), note: $('buyNote').value.trim() },
+  });
+};
+function openOwnStore(store) {
+  ownStore = store;
+  closeSides();
+  renderOwnStore();
+  $('storeOwn').classList.add('open');
+  wsSend({ t: 'store-orders', id: store.id });
+}
+function renderOwnStore() {
+  renderMyStoreList();
+  $('ownName').value = ownStore.name;
+  $('ownSignImage').value = ownStore.signImage || '';
+  $('ownStoreDesc').value = ownStore.desc || '';
+  $('ownSignPreview').style.display = ownStore.signImage ? '' : 'none';
+  if (ownStore.signImage) $('ownSignPreview').src = ownStore.signImage;
+  const box = $('ownItems');
+  box.innerHTML = ownStore.items.length ? '' : '<div style="font-size:12.5px;color:#8fa8bb;margin-top:4px">ضيف أول صنف 👇</div>';
+  ownStore.items.forEach(it => {
+    const d = document.createElement('div');
+    d.className = 'ownItem';
+    const img = it.image ? `<img src="${esc(it.image)}" alt="">` : '';
+    d.innerHTML = `${img}<div class="meta"><b>${esc(it.name)}</b>${it.desc ? `<div class="desc">${esc(it.desc)}</div>` : ''}</div><span class="price">${it.price} ج</span>`;
+    const del = document.createElement('button');
+    del.textContent = '🗑';
+    del.onclick = () => wsSend({ t: 'store-del-item', id: ownStore.id, itemId: it.id });
+    d.appendChild(del);
+    box.appendChild(d);
+  });
+}
+$('ownSignImage').addEventListener('input', () => {
+  const url = $('ownSignImage').value.trim();
+  $('ownSignPreview').style.display = url ? '' : 'none';
+  if (url) $('ownSignPreview').src = url;
+});
+$('ownRename').onclick = () => {
+  if (!ownStore) return;
+  wsSend({
+    t: 'store-rename',
+    id: ownStore.id,
+    name: $('ownName').value.trim(),
+    signImage: $('ownSignImage').value.trim(),
+    desc: $('ownStoreDesc').value.trim(),
+  });
+};
+$('ownAddItem').onclick = () => {
+  if (!ownStore) return;
+  const name = $('ownItemName').value.trim();
+  if (!name) return;
+  wsSend({
+    t: 'store-add-item',
+    id: ownStore.id,
+    name,
+    image: $('ownItemImage').value.trim(),
+    desc: $('ownItemDesc').value.trim(),
+    price: Number($('ownItemPrice').value) || 0,
+  });
+  $('ownItemName').value = ''; $('ownItemImage').value = ''; $('ownItemDesc').value = ''; $('ownItemPrice').value = '';
+};
+$('ownRefresh').onclick = () => { if (ownStore) wsSend({ t: 'store-orders', id: ownStore.id }); };
+function renderOwnOrders(orders) {
+  const box = $('ownOrders');
+  box.innerHTML = orders.length ? '' : '<div style="font-size:12.5px;color:#8fa8bb;margin-top:4px">لسه مفيش أوردرات</div>';
+  [...orders].reverse().forEach(o => {
+    const d = document.createElement('div');
+    d.className = 'orderCard';
+    d.innerHTML = `<b>#${o.id}</b> — ${o.qty} × ${o.item} (${o.price * o.qty} ج)<br>👤 ${o.buyer.name} &nbsp; 📱 <span dir="ltr">${o.buyer.phone || '—'}</span><br>📍 ${o.buyer.address || '—'}${o.buyer.note ? '<br>📝 ' + o.buyer.note : ''}`;
+    box.appendChild(d);
+  });
+}
+
+/* ================= الأدمن ================= */
+let admData = null, admTab = 'users', adminPick = false;
+$('adminBtn').onclick = () => { $('adminPanel').classList.add('open'); wsSend({ t: 'admin-data' }); };
+$('admClose').onclick = () => $('adminPanel').classList.remove('open');
+document.querySelectorAll('.atab').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.atab').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+    admTab = b.dataset.atab;
+    renderAdminBody();
+  };
+});
+function renderAdmin(data) { admData = data; renderAdminBody(); }
+function esc(s) { return String(s ?? '').replace(/</g, '&lt;'); }
+function renderAdminBody() {
+  if (!admData) return;
+  const box = $('admBody');
+  if (admTab === 'users') {
+    let h = `<table class="adm"><tr><th></th><th>الحساب</th><th>الصلاحية</th><th>واتس</th><th>تليفون</th><th>إجراءات</th></tr>`;
+    for (const u of admData.users) {
+      h += `<tr>
+        <td><span class="dot ${u.online ? 'on' : 'off'}"></span></td>
+        <td><b>${esc(u.user)}</b></td>
+        <td><select data-role="${esc(u.user)}" ${u.user === 'admin' ? 'disabled' : ''}>
+          <option value="user" ${u.role === 'user' ? 'selected' : ''}>مستخدم</option>
+          <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>أدمن</option>
+        </select></td>
+        <td dir="ltr">${esc(u.contacts?.wa) || '—'}</td>
+        <td dir="ltr">${esc(u.contacts?.phone) || '—'}</td>
+        <td>
+          <button class="btn sm ghost" data-pass="${esc(u.user)}">🔑 باسورد</button>
+          ${u.user !== 'admin' ? `<button class="btn sm danger" data-del="${esc(u.user)}">🗑</button>` : ''}
+        </td>
+      </tr>`;
+    }
+    h += '</table>';
+    box.innerHTML = h;
+    box.querySelectorAll('select[data-role]').forEach(s => {
+      s.onchange = () => wsSend({ t: 'admin-set-role', user: s.dataset.role, role: s.value });
+    });
+    box.querySelectorAll('[data-pass]').forEach(b => {
+      b.onclick = () => {
+        const np = prompt(`باسورد جديد لـ ${b.dataset.pass} (٤ حروف على الأقل):`);
+        if (np && np.length >= 4) wsSend({ t: 'admin-reset-pass', user: b.dataset.pass, pass: np });
+      };
+    });
+    box.querySelectorAll('[data-del]').forEach(b => {
+      b.onclick = () => { if (confirm(`متأكد عايز تمسح حساب ${b.dataset.del}؟`)) wsSend({ t: 'admin-del-user', user: b.dataset.del }); };
+    });
+  } else if (admTab === 'onlineT') {
+    let h = `<table class="adm"><tr><th>اللاعب</th><th>الصلاحية</th><th>المكان (x, z)</th><th>راكب</th></tr>`;
+    for (const p of admData.online) {
+      h += `<tr><td><b>${esc(p.name)}</b></td><td>${p.role}</td><td dir="ltr">${Math.round(p.x)}, ${Math.round(p.z)}</td><td>${p.ride ? '🛺' : '🚶'}</td></tr>`;
+    }
+    box.innerHTML = h + '</table>';
+  } else if (admTab === 'storesT') {
+    let h = `<button class="btn sm green" id="admMakeStore">➕ حدد مبنى في الخريطة كمحل</button>
+      <table class="adm" style="margin-top:10px"><tr><th>#</th><th>المحل</th><th>المالك</th><th>أصناف</th><th></th></tr>`;
+    for (const s of admData.stores) {
+      h += `<tr><td>${s.id}</td><td><button class="iconBtn" data-viewstore="${s.id}" title="فتح المحل">👁</button> <b>${esc(s.name)}</b></td><td>${esc(s.owner)}</td><td>${s.items.length}</td>
+        <td><button class="btn sm danger" data-delstore="${s.id}">🗑</button></td></tr>`;
+    }
+    box.innerHTML = h + '</table>';
+    $('admMakeStore').onclick = () => {
+      $('adminPanel').classList.remove('open');
+      adminPick = true;
+      toast('🏗 دوس على أي مبنى في الخريطة عشان تحوله محل (Esc للإلغاء)', { timeout: 10000 });
+    };
+    box.querySelectorAll('[data-delstore]').forEach(b => {
+      b.onclick = () => { if (confirm('تمسح المحل ده؟')) wsSend({ t: 'admin-del-store', id: Number(b.dataset.delstore) }); };
+    });
+    box.querySelectorAll('[data-viewstore]').forEach(b => {
+      b.onclick = () => {
+        const s = stores.find(x => x.id === Number(b.dataset.viewstore)) || admData.stores.find(x => x.id === Number(b.dataset.viewstore));
+        if (s) { $('adminPanel').classList.remove('open'); openShop(s); }
+      };
+    });
+  } else if (admTab === 'ordersT') {
+    let h = `<table class="adm"><tr><th>#</th><th>المحل</th><th>الصنف</th><th>كمية</th><th>المشتري</th><th>تليفون</th><th>عنوان</th><th></th></tr>`;
+    for (const o of [...admData.orders].reverse()) {
+      h += `<tr><td>${o.id}</td><td>${esc(o.storeName)}</td><td>${esc(o.item)}</td><td>${o.qty}</td>
+        <td>${esc(o.buyer?.name)}</td><td dir="ltr">${esc(o.buyer?.phone) || '—'}</td><td>${esc(o.buyer?.address) || '—'}</td>
+        <td><button class="btn sm danger" data-delorder="${o.id}">🗑</button></td></tr>`;
+    }
+    box.innerHTML = h + '</table>';
+    box.querySelectorAll('[data-delorder]').forEach(b => {
+      b.onclick = () => wsSend({ t: 'admin-del-order', id: Number(b.dataset.delorder) });
+    });
+  } else if (admTab === 'settingsT') {
+    const st = admData.settings || citySettings;
+    box.innerHTML = `
+      <label>نص شريط الأخبار</label>
+      <textarea id="admNewsText" maxlength="220" placeholder="اكتب الخبر الذي يظهر أعلى المدينة">${esc(st.news?.text || '')}</textarea>
+      <div class="row">
+        <div style="flex:1"><label>يظهر كل كام دقيقة</label><input id="admNewsEvery" type="number" min="1" max="240" value="${Number(st.news?.everyMinutes) || 10}"></div>
+        <div style="flex:1"><label>عدد مرات الظهور</label><input id="admNewsTimes" type="number" min="1" max="50" value="${Number(st.news?.times) || 3}"></div>
+      </div>
+      <label>وصف المجمع التعليمي</label>
+      <textarea id="admEduDesc" maxlength="400">${esc(st.education?.desc || '')}</textarea>
+      <label>نظام الفيديو</label>
+      <select id="admEduMode">
+        <option value="recorded" ${st.education?.mode !== 'live' ? 'selected' : ''}>فيديو مسجل - كل مستخدم يتحكم فيه</option>
+        <option value="live" ${st.education?.mode === 'live' ? 'selected' : ''}>بث مباشر - الأدمن فقط يتحكم فيه</option>
+      </select>
+      <label style="display:flex;gap:8px;align-items:center">
+        <input id="admEduLiveOn" type="checkbox" ${st.education?.liveOn ? 'checked' : ''} style="width:auto;margin:0">
+        تشغيل البث المباشر الآن
+      </label>
+      <label>رابط فيديو المجمع التعليمي</label>
+      <input id="admEduVideo" maxlength="500" placeholder="YouTube أو رابط فيديو مباشر" value="${esc(st.education?.videoUrl || '')}">
+      <button class="btn green" id="admSaveSettings" style="width:100%;margin-top:14px">حفظ إعدادات المدينة</button>
+    `;
+    $('admSaveSettings').onclick = () => wsSend({
+      t: 'admin-settings',
+      news: {
+        text: $('admNewsText').value.trim(),
+        everyMinutes: Number($('admNewsEvery').value) || 10,
+        times: Number($('admNewsTimes').value) || 3,
+      },
+      education: {
+        desc: $('admEduDesc').value.trim(),
+        videoUrl: $('admEduVideo').value.trim(),
+        mode: $('admEduMode').value,
+        liveOn: $('admEduLiveOn').checked,
+      },
+    });
+  }
+}
+addEventListener('keydown', e => { if (e.key === 'Escape') adminPick = false; });
+
+function adminAssignStore(bld) {
+  adminPick = false;
+  const name = prompt('اسم المحل:');
+  if (!name) return;
+  const phone = prompt('رقم تليفون صاحب المحل:');
+  if (!phone) return;
+  const q = phone.replace(/\s+/g, '');
+  const matches = (admData?.users || []).filter(u => String(u.contacts?.phone || '').includes(q));
+  if (!matches.length) {
+    toast('⚠ مفيش مستخدم بالرقم ده. اعمل الحساب الأول أو اكتب الرقم صح.', { timeout: 7000 });
+    return;
+  }
+  let owner = matches[0];
+  if (matches.length > 1) {
+    const list = matches.map((u, i) => `${i + 1}) ${u.user} — ${u.contacts?.phone || ''}`).join('\n');
+    const pick = Number(prompt(`اختار صاحب المحل:\n${list}`)) || 1;
+    owner = matches[Math.max(0, Math.min(matches.length - 1, pick - 1))];
+  }
+  if (!confirm(`ربط محل «${name}» بالحساب:\n${owner.user}\n${owner.contacts?.phone || ''}`)) return;
+  wsSend({ t: 'admin-make-store', x: +bld.x.toFixed(1), z: +bld.z.toFixed(1), name, ownerPhone: owner.contacts?.phone });
+}
+
+/* ================= الماوس ================= */
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let selected = null;
+const ring = new THREE.Mesh(new THREE.RingGeometry(4, 5.2, 32), new THREE.MeshBasicMaterial({ color: 0xffd97a, side: THREE.DoubleSide, transparent: true, opacity: 0.95 }));
+ring.rotation.x = -Math.PI/2; ring.position.y = 0.5; ring.visible = false;
+scene.add(ring);
+
+function closeSides() {
+  ['story', 'pp', 'shop', 'storeOwn'].forEach(id => $(id).classList.remove('open'));
+}
+document.querySelectorAll('.side .close').forEach(b => {
+  b.onclick = () => { $(b.dataset.close).classList.remove('open'); selected = null; ring.visible = false; };
+});
+
+function setPointer(e) {
+  pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+}
+function pickActors(e) {
+  setPointer(e);
+  const targets = [];
+  if (me.mesh) targets.push(me.mesh);
+  for (const r of remotes.values()) targets.push(r.mesh);
+  for (const p of people) targets.push(p.mesh);
+  const hits = raycaster.intersectObjects(targets, true);
+  if (!hits.length) return null;
+  let o = hits[0].object;
+  while (o && !o.userData.person && o.userData.playerId === undefined && o !== me.mesh) o = o.parent;
+  return o;
+}
+function pickBuilding(e) {
+  setPointer(e);
+  const hits = raycaster.intersectObjects(instMeshes, false);
+  if (!hits.length || hits[0].instanceId === undefined) return null;
+  return hits[0].object.userData.items[hits[0].instanceId];
+}
+function pickStoreLabel(e) {
+  setPointer(e);
+  const labels = [...storeLabels.values()];
+  const hits = raycaster.intersectObjects(labels, false);
+  if (!hits.length) return null;
+  const id = hits[0].object.userData.storeId;
+  return stores.find(s => s.id === id) || null;
+}
+function pickSpecial(e) {
+  setPointer(e);
+  const hits = raycaster.intersectObjects(specialPickables, true);
+  if (!hits.length) return null;
+  let o = hits[0].object;
+  while (o && !o.userData.education) o = o.parent;
+  return o?.userData.education ? 'education' : null;
+}
+function groundPoint(e) {
+  setPointer(e);
+  const v = new THREE.Vector3();
+  return raycaster.ray.intersectPlane(groundPlane, v) ? v : null;
+}
+
+function showNPC(def, mesh) {
+  closeSides();
+  currentNPC = def;
+  selected = mesh;
+  $('sAvatar').textContent = def.avatar;
+  $('sName').textContent = def.name;
+  $('sJob').textContent = def.job;
+  $('sText').textContent = def.story;
+  $('sPlace').textContent = def.place;
+  $('npcMsgs').innerHTML = '';
+  $('npcInput').value = '';
+  $('npcSend').disabled = false;
+  npcChatMsg(def.name, 'أهلًا بيك، اسألني عن القنايات أو عن حكايتي.', 'npc');
+  const chips = $('sChips');
+  chips.innerHTML = '';
+  $('sLinksTitle').style.display = def.links?.length ? '' : 'none';
+  (def.links || []).forEach(n => {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = n;
+    b.onclick = () => {
+      const st = people.find(p => p.mesh.userData.person?.name === n);
+      if (st) showNPC(st.mesh.userData.person, st.mesh);
+    };
+    chips.appendChild(b);
+  });
+  $('story').classList.add('open');
+  ring.visible = true;
+}
+if ($('npcSend')) $('npcSend').onclick = sendNPCChat;
+if ($('npcInput')) $('npcInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendNPCChat(); });
+let ppTarget = null;
+function showPlayer(id) {
+  closeSides();
+  const r = remotes.get(id);
+  if (!r) return;
+  ppTarget = id;
+  selected = r.mesh;
+  $('ppName').textContent = '🎮 ' + r.name;
+  $('pp').classList.add('open');
+  ring.visible = true;
+}
+$('ppChat').onclick = () => { if (ppTarget != null) { $('chat').classList.add('show'); setPrivTarget(ppTarget); } };
+$('ppCall').onclick = () => { if (ppTarget != null) startCall(ppTarget); };
+$('ppContact').onclick = () => {
+  if (ppTarget != null) {
+    wsSend({ t: 'contact-request', to: ppTarget });
+    toast('📨 بعتنا الطلب — مستنيين موافقته', { timeout: 5000 });
+  }
+};
+
+let dragging = false, downPos = null, downOnMe = false;
+renderer.domElement.addEventListener('pointerdown', e => {
+  downPos = [e.clientX, e.clientY];
+  downOnMe = false;
+  if (me.mesh) {
+    setPointer(e);
+    if (raycaster.intersectObject(me.mesh, true).length) downOnMe = true;
+  }
+});
+renderer.domElement.addEventListener('pointermove', e => {
+  if (downOnMe && downPos && !dragging) {
+    if (Math.hypot(e.clientX - downPos[0], e.clientY - downPos[1]) > 8) {
+      dragging = true;
+      controls.enabled = false;
+      dropRing.visible = true;
+    }
+  }
+  if (dragging) {
+    const p = groundPoint(e);
+    if (p) dropRing.position.set(p.x, 0.45, p.z);
+    return;
+  }
+  const now = performance.now();
+  if (now - (renderer._lastHover || 0) < 80) return;
+  renderer._lastHover = now;
+  const special = pickSpecial(e);
+  const labelStore = special ? null : pickStoreLabel(e);
+  const o = labelStore ? null : pickActors(e);
+  renderer.domElement.style.cursor = (special || labelStore || o) ? 'pointer' : 'grab';
+});
+renderer.domElement.addEventListener('pointerup', e => {
+  if (dragging) {
+    dragging = false;
+    controls.enabled = true;
+    setCameraMode(cameraModeIndex);
+    dropRing.visible = false;
+    const p = groundPoint(e);
+    if (p) setMoveTarget(p.x, p.z);
+    downPos = null;
+    return;
+  }
+  if (!downPos) return;
+  const moved = Math.hypot(e.clientX - downPos[0], e.clientY - downPos[1]);
+  downPos = null;
+  if (moved > 6) return;
+  const special = pickSpecial(e);
+  if (special === 'education') { openEducation(); return; }
+  const labelStore = pickStoreLabel(e);
+  if (labelStore) {
+    if (profile && labelStore.owner === profile.user) openOwnStore(labelStore);
+    else openShop(labelStore);
+    return;
+  }
+  /* أشخاص أولًا */
+  const o = pickActors(e);
+  if (o) {
+    if (o.userData.playerId !== undefined) { showPlayer(o.userData.playerId); return; }
+    if (o.userData.person) { showNPC(o.userData.person, o); return; }
+    return;
+  }
+  /* مباني: محلات أو اختيار الأدمن */
+  const bld = pickBuilding(e);
+  if (bld) {
+    if (adminPick) { adminAssignStore(bld); return; }
+    const store = storeAt(bld.x, bld.z);
+    if (store) {
+      if (profile && store.owner === profile.user) openOwnStore(store);
+      else openShop(store);
+    }
+  }
+});
+renderer.domElement.addEventListener('dblclick', e => {
+  const p = groundPoint(e);
+  if (p && me.mesh) setMoveTarget(p.x, p.z);
+});
+
+/* ================= نهار/ليل + about + خروج ================= */
+let night = false;
+let cityTimePhase = 'day';
+function setNight(on, label = '') {
+  night = on;
+  scene.background.copy(on ? NIGHT_SKY : DAY_SKY);
+  scene.fog.color.copy(scene.background);
+  sun.intensity = on ? 0.1 : 1.7;
+  hemi.intensity = on ? 0.22 : 0.8;
+  for (const m of facadeMats) {
+    m.map = on ? m.userData.night : m.userData.day;
+    if (on) {
+      m.emissiveMap = m.userData.night;
+      m.emissive.setHex(0xffffff);
+      m.emissiveIntensity = 0.55;
+    } else {
+      m.emissiveMap = null;
+      m.emissiveIntensity = 0;
+      m.emissive.setHex(0x000000);
+    }
+    m.needsUpdate = true;
+  }
+  $('dayNightBtn').textContent = '⏱ توقيت تلقائي';
+  $('clock').textContent = label || (on ? '🌙 القنايات — ليلًا، والشبابيك منورة' : '🕌 القنايات — نهارًا');
+}
+function updateCityTimeLighting() {
+  const now = new Date();
+  const time = new Intl.DateTimeFormat('ar-EG', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit', hour12: true }).format(now);
+  const hour = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'Africa/Cairo', hour: '2-digit', hour12: false }).format(now));
+  const isNight = hour < 6 || hour >= 18;
+  const isEvening = hour >= 16 && hour < 18;
+  const isMorning = hour >= 6 && hour < 8;
+  cityTimePhase = isNight ? 'night' : isMorning ? 'morning' : isEvening ? 'evening' : 'day';
+  setNight(isNight, `${isNight ? '🌙' : isEvening ? '🌇' : isMorning ? '🌅' : '🕌'} القنايات — ${time}`);
+  if (!isNight) {
+    sun.intensity = isEvening || isMorning ? 1.0 : 1.7;
+    hemi.intensity = isEvening || isMorning ? 0.55 : 0.8;
+  }
+  updateCityAmbience();
+}
+
+let audioCtx = null, audioMaster = null, citySoundOn = false, cityOscs = [], noiseNode = null;
+function makeNoiseBuffer(ctx) {
+  const buffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.35;
+  return buffer;
+}
+function startCityAmbience() {
+  if (citySoundOn) return;
+  audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+  audioMaster = audioCtx.createGain();
+  audioMaster.gain.value = 0.025;
+  audioMaster.connect(audioCtx.destination);
+  noiseNode = audioCtx.createBufferSource();
+  noiseNode.buffer = makeNoiseBuffer(audioCtx);
+  noiseNode.loop = true;
+  const noiseFilter = audioCtx.createBiquadFilter();
+  noiseFilter.type = 'lowpass';
+  noiseFilter.frequency.value = 650;
+  noiseNode.connect(noiseFilter).connect(audioMaster);
+  noiseNode.start();
+  cityOscs = [92, 138, 220].map(freq => {
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = 'sine';
+    o.frequency.value = freq;
+    g.gain.value = 0.005;
+    o.connect(g).connect(audioMaster);
+    o.start();
+    return { o, g };
+  });
+  citySoundOn = true;
+  $('soundBtn').textContent = '🔊 صوت المدينة';
+  updateCityAmbience();
+}
+function stopCityAmbience() {
+  citySoundOn = false;
+  try { noiseNode?.stop(); } catch {}
+  cityOscs.forEach(x => { try { x.o.stop(); } catch {} });
+  cityOscs = []; noiseNode = null;
+  audioMaster?.disconnect();
+  audioMaster = null;
+  $('soundBtn').textContent = '🔇 صوت المدينة';
+}
+function updateCityAmbience() {
+  if (!citySoundOn || !audioMaster || !audioCtx) return;
+  const cfg = {
+    morning: { volume: 0.02, freqs: [110, 165, 260] },
+    day: { volume: 0.032, freqs: [96, 140, 228] },
+    evening: { volume: 0.024, freqs: [82, 128, 190] },
+    night: { volume: 0.014, freqs: [55, 92, 144] },
+  }[cityTimePhase] || { volume: 0.025, freqs: [90, 130, 210] };
+  audioMaster.gain.setTargetAtTime(cfg.volume, audioCtx.currentTime, 0.6);
+  cityOscs.forEach((x, i) => {
+    x.o.frequency.setTargetAtTime(cfg.freqs[i], audioCtx.currentTime, 0.8);
+    x.g.gain.setTargetAtTime(cityTimePhase === 'night' ? 0.0035 : 0.0055, audioCtx.currentTime, 0.8);
+  });
+}
+$('soundBtn').onclick = async () => {
+  if (!citySoundOn) {
+    startCityAmbience();
+    await audioCtx?.resume?.();
+    toast('🔊 صوت المدينة شغال بهدوء حسب توقيت القنايات', { timeout: 5000 });
+  } else stopCityAmbience();
+};
+$('dayNightBtn').onclick = updateCityTimeLighting;
+updateCityTimeLighting();
+setInterval(updateCityTimeLighting, 60000);
+$('cameraBtn').onclick = () => setCameraMode(cameraModeIndex + 1);
+setCameraMode(0);
+$('aboutBtn').onclick = () => $('about').classList.add('open');
+$('aboutClose').onclick = () => $('about').classList.remove('open');
+$('about').addEventListener('click', e => { if (e.target.id === 'about') e.target.classList.remove('open'); });
+function closeEducation() {
+  $('eduPanel').classList.remove('open');
+  $('eduFrame').src = '';
+  $('eduVideo').pause();
+  $('eduVideo').removeAttribute('src');
+}
+$('eduClose').onclick = closeEducation;
+$('eduPanel').addEventListener('click', e => { if (e.target.id === 'eduPanel') closeEducation(); });
+$('logoutBtn').onclick = () => {
+  localStorage.removeItem('qanayat-token');
+  location.reload();
+};
+
+/* ================= الدخول/التسجيل ================= */
+const PLAYER_COLORS = ['#3a6ea5', '#c23b3b', '#41b06e', '#8a5fd1', '#e8902e', '#16a3a8', '#d14f8a', '#5a6b7a'];
+let selColor = PLAYER_COLORS[0], selStyle = 'shirt';
+const swBox = $('swatches');
+PLAYER_COLORS.forEach((c, i) => {
+  const d = document.createElement('div');
+  d.className = 'swatch' + (i === 0 ? ' sel' : '');
+  d.style.background = c;
+  d.onclick = () => { swBox.querySelectorAll('.swatch').forEach(x => x.classList.remove('sel')); d.classList.add('sel'); selColor = c; };
+  swBox.appendChild(d);
+});
+document.querySelectorAll('.styleOpt').forEach(el => {
+  el.onclick = () => {
+    document.querySelectorAll('.styleOpt').forEach(x => x.classList.remove('sel'));
+    el.classList.add('sel');
+    selStyle = el.dataset.style;
+  };
+});
+document.querySelectorAll('.ltab').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.ltab').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+    $('tab-in').style.display = b.dataset.ltab === 'in' ? '' : 'none';
+    $('tab-up').style.display = b.dataset.ltab === 'up' ? '' : 'none';
+    $('loginErr').style.display = 'none';
+  };
+});
+$('liBtn').onclick = () => {
+  $('loginErr').style.display = 'none';
+  wsSend({ t: 'login', phone: $('liUser').value.trim(), pass: $('liPass').value });
+};
+$('liPass').addEventListener('keydown', e => { if (e.key === 'Enter') $('liBtn').click(); });
+$('ruBtn').onclick = () => {
+  $('loginErr').style.display = 'none';
+  if ($('ruPhone').value.trim().length < 7) {
+    $('loginErr').textContent = 'رقم التليفون مطلوب ولازم يكون صحيح';
+    $('loginErr').style.display = 'block';
+    return;
+  }
+  wsSend({
+    t: 'register',
+    user: $('ruUser').value.trim(), pass: $('ruPass').value,
+    style: selStyle, color: selColor,
+    contacts: { wa: $('ruWa').value.trim(), fb: $('ruFb').value.trim(), phone: $('ruPhone').value.trim() },
+  });
+};
+$('soloBtn').onclick = async () => {
+  soloMode = true;
+  $('login').style.display = 'none';
+  setOnlineUI();
+  await startWorld();
+};
+
+/* ================= حلقة الرسم ================= */
+const clock = new THREE.Clock();
+const camFollow = new THREE.Vector3();
+function updateCameraView() {
+  if (!(me.joined && me.mesh) || dragging) {
+    if (selected) controls.target.lerp(new THREE.Vector3(selected.position.x, 4, selected.position.z), 0.05);
+    return;
+  }
+  if (cameraMode === 'free') {
+    camFollow.set(me.x, 4, me.z);
+    const delta = camFollow.clone().sub(controls.target);
+    controls.target.add(delta.multiplyScalar(0.12));
+    camera.position.add(delta.multiplyScalar(1));
+    return;
+  }
+  const y = me.riding ? 3.4 : 2.35;
+  const forward = new THREE.Vector3(Math.sin(me.ry), 0, Math.cos(me.ry));
+  if (cameraMode === 'first') {
+    camPos.set(me.x, y, me.z).add(forward.clone().multiplyScalar(1.2));
+    camTarget.set(me.x, y, me.z).add(forward.clone().multiplyScalar(38));
+  } else {
+    camPos.set(me.x, y + 4.5, me.z).add(forward.clone().multiplyScalar(-13));
+    camTarget.set(me.x, y + 1.2, me.z).add(forward.clone().multiplyScalar(12));
+  }
+  camera.position.lerp(camPos, 0.24);
+  controls.target.lerp(camTarget, 0.28);
+}
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
+  for (const p of people) {
+    moveAlong(p, dt);
+    p.mesh.position.set(p.x, Math.abs(Math.sin(t * 7 + p.phase)) * 0.2, p.z);
+    p.mesh.rotation.y = p.ry;
+    const sw2 = Math.sin(t * 7 + p.phase) * 0.55;
+    const u = p.mesh.userData;
+    if (u.leg0) { u.leg0.rotation.x = sw2; u.leg1.rotation.x = -sw2; }
+    if (u.arm0) { u.arm0.rotation.x = -sw2 * 0.7; u.arm1.rotation.x = sw2 * 0.7; }
+  }
+  if (crowdBody) {
+    for (let i = 0; i < crowd.length; i++) {
+      const c = crowd[i];
+      moveAlong(c, dt);
+      crowdDummy.position.set(c.x, Math.abs(Math.sin(t * 7 + c.phase)) * 0.2, c.z);
+      crowdDummy.rotation.set(0, c.ry, Math.sin(t * 7 + c.phase) * 0.04);
+      crowdDummy.scale.setScalar(c.scale);
+      crowdDummy.updateMatrix();
+      crowdBody.setMatrixAt(i, crowdDummy.matrix);
+      crowdHead.setMatrixAt(i, crowdDummy.matrix);
+    }
+    crowdBody.instanceMatrix.needsUpdate = true;
+    crowdHead.instanceMatrix.needsUpdate = true;
+  }
+  for (const c of cars) {
+    moveAlong(c, dt);
+    c.mesh.position.set(c.x, 0, c.z);
+    c.mesh.rotation.y = c.ry;
+  }
+  updateMe(dt, t);
+  netTick();
+  for (const r of remotes.values()) {
+    r.x += (r.tx - r.x) * 0.15;
+    r.z += (r.tz - r.z) * 0.15;
+    let dr = r.try_ - r.ry;
+    while (dr > Math.PI) dr -= Math.PI*2;
+    while (dr < -Math.PI) dr += Math.PI*2;
+    r.ry += dr * 0.2;
+    const moving = Math.hypot(r.tx - r.x, r.tz - r.z) > 0.3;
+    const baseY = r.ride ? 1.7 : (moving ? Math.abs(Math.sin(t * 8 + r.phase)) * 0.25 : 0);
+    r.mesh.position.set(r.x, baseY, r.z);
+    r.mesh.rotation.y = r.ry;
+    r.vehicle.visible = !!r.ride;
+    if (r.ride) { r.vehicle.position.set(r.x, 0, r.z); r.vehicle.rotation.y = r.ry; }
+    const sw3 = (moving && !r.ride) ? Math.sin(t * 8 + r.phase) * 0.6 : 0;
+    const u = r.mesh.userData;
+    if (u.leg0) { u.leg0.rotation.x = sw3; u.leg1.rotation.x = -sw3; }
+    if (u.arm0) { u.arm0.rotation.x = -sw3 * 0.7; u.arm1.rotation.x = sw3 * 0.7; }
+  }
+  updateCameraView();
+  if (selected) {
+    ring.position.x = selected.position.x;
+    ring.position.z = selected.position.z;
+  }
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ================= بناء العالم ================= */
+let worldBuilt = false, worldBuildingP = null;
+function startWorld() {
+  if (worldBuildingP) return worldBuildingP;
+  worldBuildingP = (async () => {
+    const loading = $('loading');
+    loading.style.display = 'flex';
+    loadStep('تحميل ١٧٦٠ شارع حقيقي من OpenStreetMap... 🗺');
+    await loadOSM();
+    loadStep('رسم الحقول والكتلة العمرانية... 🌾');
+    await new Promise(r => setTimeout(r, 30));
+    buildGround();
+    buildHash();
+    loadStep('رصف الشوارع والسكة الحديد... 🛣');
+    await new Promise(r => setTimeout(r, 30));
+    buildRoads();
+    loadStep('بناء البيوت بشبابيكها وبلكوناتها... 🏘');
+    await new Promise(r => setTimeout(r, 30));
+    buildBuildings();
+    loadStep('الناس نازلة الشوارع... 🚶');
+    await new Promise(r => setTimeout(r, 30));
+    buildLandmarks();
+    buildPalms();
+    spawnPeople();
+    spawnCrowd();
+    spawnCars();
+    worldBuilt = true;
+    window.__q = { me, remotes, people, crowd, cars, stores: () => stores, camera, controls, THREE, keys, canStand, BUILDINGS, profile: () => profile };
+    loading.style.opacity = '0';
+    setTimeout(() => { loading.style.display = 'none'; loading.style.opacity = '1'; }, 600);
+  })();
+  return worldBuildingP;
+}
+
+connectWS();
+animate();
+</script>
+</body>
+</html>

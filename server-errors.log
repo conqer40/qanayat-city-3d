@@ -1,0 +1,9 @@
+[2026-06-12T23:27:32.173Z] uncaughtException
+Error: listen EADDRINUSE: address already in use 0.0.0.0:4173
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at node:net:2274:7
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+[2026-06-12T23:27:32.174Z] exit 0
+
