@@ -2681,8 +2681,8 @@ function playPassingCar() {
     const end = start + duration;
     const direction = Math.random() > 0.5 ? 1 : -1;
     
-    // Smooth fade in and out for distant car passing
-    gain.gain.linearRampToValueAtTime(0.008 + Math.random() * 0.007, start + duration * 0.5);
+    // Smooth fade in and out for distant car passing (slightly louder)
+    gain.gain.linearRampToValueAtTime(0.045 + Math.random() * 0.03, start + duration * 0.5);
     gain.gain.linearRampToValueAtTime(0, end);
     
     if (panner) {
@@ -2742,17 +2742,17 @@ function startCityAmbience() {
     hpFilter.frequency.setValueAtTime(280, audioCtx.currentTime);
     
     crowdGain = audioCtx.createGain();
-    crowdGain.gain.setValueAtTime(0.002, audioCtx.currentTime); // quiet background murmur
+    crowdGain.gain.setValueAtTime(0.015, audioCtx.currentTime); // audible background murmur
     
     const lfo1 = audioCtx.createOscillator();
     const lfo1Gain = audioCtx.createGain();
     lfo1.frequency.value = 1.8;
-    lfo1Gain.gain.value = 0.0006;
+    lfo1Gain.gain.value = 0.005;
     
     const lfo2 = audioCtx.createOscillator();
     const lfo2Gain = audioCtx.createGain();
     lfo2.frequency.value = 3.3;
-    lfo2Gain.gain.value = 0.0004;
+    lfo2Gain.gain.value = 0.003;
     
     lfo1.connect(lfo1Gain).connect(crowdGain.gain);
     lfo2.connect(lfo2Gain).connect(crowdGain.gain);
