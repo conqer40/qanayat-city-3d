@@ -1947,6 +1947,9 @@ function chatMsg(name, text, priv) {
   chatMsgsEl.appendChild(d);
   while (chatMsgsEl.children.length > 100) chatMsgsEl.firstChild.remove();
   chatMsgsEl.scrollTop = chatMsgsEl.scrollHeight;
+  if (!profile || name !== profile.user) {
+    playChatChime();
+  }
 }
 function privateMsg(name, text, sys = false) {
   const d = document.createElement('div');
@@ -1955,6 +1958,9 @@ function privateMsg(name, text, sys = false) {
   privateMsgsEl.appendChild(d);
   while (privateMsgsEl.children.length > 100) privateMsgsEl.firstChild.remove();
   privateMsgsEl.scrollTop = privateMsgsEl.scrollHeight;
+  if (!sys && (!profile || name !== profile.user)) {
+    playChatChime();
+  }
 }
 function chatSys(text) {
   const d = document.createElement('div');
@@ -2009,6 +2015,9 @@ function npcChatMsg(name, text, who) {
   box.appendChild(d);
   while (box.children.length > 30) box.firstChild.remove();
   box.scrollTop = box.scrollHeight;
+  if (who === 'npc' && text !== 'بفكر شوية...') {
+    playChatChime();
+  }
 }
 function sendNPCChat() {
   const inp = $('npcInput');
@@ -2570,9 +2579,10 @@ renderer.domElement.addEventListener('pointerup', e => {
   downPos = null;
   if (moved > 6) return;
   const special = pickSpecial(e);
-  if (special === 'education') { openEducation(); return; }
+  if (special === 'education') { playClickSound(); openEducation(); return; }
   const labelStore = pickStoreLabel(e);
   if (labelStore) {
+    playClickSound();
     if (profile && labelStore.owner === profile.user) openOwnStore(labelStore);
     else openShop(labelStore);
     return;
@@ -2580,6 +2590,7 @@ renderer.domElement.addEventListener('pointerup', e => {
   /* أشخاص أولًا */
   const o = pickActors(e);
   if (o) {
+    playClickSound();
     if (o.userData.playerId !== undefined) { showPlayer(o.userData.playerId); return; }
     if (o.userData.person) { showNPC(o.userData.person, o); return; }
     return;
@@ -2587,6 +2598,7 @@ renderer.domElement.addEventListener('pointerup', e => {
   /* مباني: محلات أو اختيار الأدمن */
   const bld = pickBuilding(e);
   if (bld) {
+    playClickSound();
     if (adminPick) { adminAssignStore(bld); return; }
     const store = storeAt(bld.x, bld.z);
     if (store) {
@@ -2701,6 +2713,130 @@ function playPassingCar() {
   const nextCarTime = (8 + Math.random() * 14) * 1000;
   carTimer = setTimeout(playPassingCar, nextCarTime);
 }
+function playBirdChirp() {
+  if (!citySoundOn || !audioCtx || !audioMaster || cityTimePhase === 'night') return;
+  try {
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0, now);
+    
+    osc.connect(gain).connect(audioMaster);
+    
+    const duration = 0.15;
+    osc.frequency.setValueAtTime(1600, now);
+    osc.frequency.exponentialRampToValueAtTime(3400, now + duration);
+    
+    gain.gain.linearRampToValueAtTime(0.008, now + 0.04);
+    gain.gain.linearRampToValueAtTime(0, now + duration);
+    
+    osc.start(now);
+    osc.stop(now + duration);
+    
+    if (Math.random() > 0.4) {
+      setTimeout(() => {
+        if (!citySoundOn || cityTimePhase === 'night' || !audioCtx) return;
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'sine';
+        gain2.gain.setValueAtTime(0, audioCtx.currentTime);
+        osc2.connect(gain2).connect(audioMaster);
+        osc2.frequency.setValueAtTime(1900, audioCtx.currentTime);
+        osc2.frequency.exponentialRampToValueAtTime(3700, audioCtx.currentTime + 0.12);
+        gain2.gain.linearRampToValueAtTime(0.008, audioCtx.currentTime + 0.04);
+        gain2.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.12);
+        osc2.start();
+        osc2.stop(audioCtx.currentTime + 0.12);
+      }, 150);
+    }
+  } catch (err) {}
+}
+function playCricketChirps() {
+  if (!citySoundOn || !audioCtx || !audioMaster || cityTimePhase !== 'night') return;
+  try {
+    const now = audioCtx.currentTime;
+    const numPulses = 3;
+    const pulseDuration = 0.035;
+    const pulseGap = 0.025;
+    
+    for (let i = 0; i < numPulses; i++) {
+      const start = now + i * (pulseDuration + pulseGap);
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(4000 + Math.random() * 200, start);
+      
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.005, start + 0.008);
+      gain.gain.linearRampToValueAtTime(0, start + pulseDuration);
+      
+      osc.connect(gain).connect(audioMaster);
+      osc.start(start);
+      osc.stop(start + pulseDuration);
+    }
+  } catch (err) {}
+}
+function playClickSound() {
+  if (!audioCtx) {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) { return; }
+  }
+  if (!audioCtx) return;
+  try {
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1000, now);
+    osc.frequency.exponentialRampToValueAtTime(250, now + 0.07);
+    
+    gain.gain.setValueAtTime(0.008, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+    
+    const dest = audioMaster || audioCtx.destination;
+    osc.connect(gain).connect(dest);
+    osc.start(now);
+    osc.stop(now + 0.07);
+  } catch (err) {}
+}
+function playChatChime() {
+  if (!audioCtx) {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) { return; }
+  }
+  if (!audioCtx) return;
+  try {
+    const now = audioCtx.currentTime;
+    const dest = audioMaster || audioCtx.destination;
+    
+    const osc1 = audioCtx.createOscillator();
+    const gain1 = audioCtx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(800, now);
+    gain1.gain.setValueAtTime(0.006, now);
+    gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+    osc1.connect(gain1).connect(dest);
+    osc1.start(now);
+    osc1.stop(now + 0.25);
+    
+    const delay = 0.1;
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1000, now + delay);
+    gain2.gain.setValueAtTime(0.006, now + delay);
+    gain2.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.35);
+    osc2.connect(gain2).connect(dest);
+    osc2.start(now + delay);
+    osc2.stop(now + delay + 0.35);
+  } catch (err) {}
+}
 function startCityAmbience() {
   if (citySoundOn) return;
   audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
@@ -2772,10 +2908,24 @@ function startCityAmbience() {
   // Start distant cars loop
   clearTimeout(carTimer);
   carTimer = setTimeout(playPassingCar, 1500);
+
+  // Start crickets/birds loop
+  clearInterval(ambientExtraTimer);
+  ambientExtraTimer = setInterval(() => {
+    if (!citySoundOn || !audioCtx) return;
+    if (cityTimePhase === 'night') {
+      playCricketChirps();
+    } else {
+      if (Math.random() < 0.18) {
+        playBirdChirp();
+      }
+    }
+  }, 2200);
 }
 function stopCityAmbience() {
   citySoundOn = false;
   clearTimeout(carTimer);
+  clearInterval(ambientExtraTimer);
   try { noiseNode?.stop(); } catch {}
   try { crowdNoiseNode?.stop(); } catch {}
   crowdLfos.forEach(l => { try { l.stop(); } catch {} });
@@ -3010,6 +3160,18 @@ function startWorld() {
 
 connectWS();
 animate();
+document.addEventListener('click', e => {
+  if (e.target && (
+    e.target.tagName === 'BUTTON' || 
+    e.target.closest('button') || 
+    e.target.classList.contains('chip') || 
+    e.target.classList.contains('styleOpt') || 
+    e.target.classList.contains('swatch') || 
+    e.target.classList.contains('itemRow')
+  )) {
+    playClickSound();
+  }
+});
 </script>
 </body>
 </html>
