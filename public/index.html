@@ -237,44 +237,160 @@
   }
   .toast .btn { padding: 5px 14px; font-size: 13px; }
 
-  /* ===== الدخول ===== */
+  /* ===== شاشة الدخول الرئيسية ===== */
   #login {
-    position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center;
-    background: radial-gradient(circle at 50% 30%, #143752, #07182a 75%);
+    position: fixed; inset: 0; z-index: 40; overflow-y: auto; overflow-x: hidden;
+    background:
+      radial-gradient(ellipse 90% 55% at 50% 110%, rgba(255,150,60,.22), transparent 60%),
+      linear-gradient(180deg, #050d1e 0%, #0a1a36 35%, #14315c 70%, #2a4a78 100%);
   }
+  /* نجوم بتلمع */
+  #lgStars { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  #lgStars i {
+    position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff;
+    animation: starTw 3.2s ease-in-out infinite;
+  }
+  @keyframes starTw { 0%,100% { opacity: .15; } 50% { opacity: .95; } }
+  /* سحاب هادي */
+  .lgCloud {
+    position: absolute; pointer-events: none; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(190,215,240,.10), rgba(190,215,240,0));
+    animation: cloudDrift linear infinite;
+    will-change: transform;
+  }
+  @keyframes cloudDrift { from { transform: translateX(-30vw); } to { transform: translateX(130vw); } }
+
+  .lgWrap {
+    position: relative; z-index: 2; max-width: 1180px; margin: 0 auto;
+    display: grid; grid-template-columns: minmax(0, 1fr) 410px;
+    grid-template-areas: "head card" "more card";
+    align-items: center; column-gap: 56px; row-gap: 6px;
+    padding: 48px 24px 250px; min-height: 100%;
+  }
+  /* ===== الجناح التعريفي ===== */
+  .lgHead { grid-area: head; align-self: end; color: #eaf4ff; max-width: 640px; }
+  .lgMore { grid-area: more; align-self: start; color: #eaf4ff; max-width: 640px; }
+  .lgLogo {
+    font-size: 52px; font-weight: 900; line-height: 1.25; letter-spacing: -1px;
+    background: linear-gradient(120deg, #ffd97a 10%, #ffb95e 45%, #7ce0ff 90%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 4px 18px rgba(255,200,90,.25));
+    animation: lgUp .7s ease-out both;
+  }
+  .lgLogo .em { font-size: 44px; -webkit-text-fill-color: initial; }
+  .lgTag {
+    font-size: 19px; font-weight: 700; color: #cfe3f5; margin-top: 6px;
+    animation: lgUp .7s .08s ease-out both;
+  }
+  .lgDesc {
+    font-size: 14.5px; line-height: 2; color: #9fc0da; margin-top: 12px; max-width: 560px;
+    animation: lgUp .7s .16s ease-out both;
+  }
+  .lgDesc b { color: #ffd97a; }
+  .lgFeats {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 22px;
+    animation: lgUp .7s .24s ease-out both;
+  }
+  .lgFeat {
+    display: flex; align-items: center; gap: 11px; padding: 11px 14px;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(124,224,255,.14);
+    border-radius: 14px; backdrop-filter: blur(4px);
+    transition: transform .2s, background .2s, border-color .2s;
+  }
+  .lgFeat:hover { transform: translateY(-3px); background: rgba(255,255,255,.09); border-color: rgba(255,217,122,.45); }
+  .lgFeat .ic { font-size: 26px; flex: 0 0 auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.4)); }
+  .lgFeat b { display: block; font-size: 13.5px; color: #fff; }
+  .lgFeat span { font-size: 11.5px; color: #8fb0c8; }
+  .lgStats {
+    display: flex; gap: 26px; margin-top: 22px; flex-wrap: wrap;
+    animation: lgUp .7s .32s ease-out both;
+  }
+  .lgStat b { display: block; font-size: 26px; font-weight: 900; color: #ffd97a; }
+  .lgStat span { font-size: 12px; color: #8fb0c8; }
+  @keyframes lgUp { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+
+  /* ===== كارت الدخول ===== */
   #login .card {
-    width: 430px; max-width: calc(100vw - 32px); max-height: 92vh; overflow-y: auto;
-    background: linear-gradient(165deg, #11304d, #081d31);
-    border: 1px solid rgba(255,217,122,.4); border-radius: 22px; padding: 26px 28px; color: #eef6ff;
-    box-shadow: 0 24px 80px rgba(0,0,0,.6);
+    grid-area: card; align-self: center; width: 100%; max-width: calc(100vw - 32px);
+    background: linear-gradient(165deg, rgba(20,52,84,.92), rgba(8,25,45,.94));
+    border: 1px solid rgba(255,217,122,.35); border-radius: 24px; padding: 26px 28px; color: #eef6ff;
+    box-shadow: 0 24px 80px rgba(0,0,0,.55), 0 0 0 1px rgba(124,224,255,.08) inset;
+    backdrop-filter: blur(14px);
+    animation: lgUp .7s .2s ease-out both;
+    position: relative;
   }
-  #login h2 { color: #ffd97a; font-size: 24px; font-weight: 900; }
-  #login .tag { color: #9fd0ff; font-size: 13px; margin-bottom: 14px; }
-  .ltabs { display: flex; gap: 6px; margin-bottom: 6px; }
+  #login .card::before {
+    content: ''; position: absolute; inset: -3px; border-radius: 27px; z-index: -1;
+    background: linear-gradient(130deg, rgba(255,217,122,.5), rgba(255,217,122,.06) 30%, rgba(124,224,255,.06) 70%, rgba(124,224,255,.45));
+    opacity: .6;
+  }
+  #login h2 { color: #ffd97a; font-size: 22px; font-weight: 900; }
+  #login .tag { color: #9fd0ff; font-size: 12.5px; margin-bottom: 14px; }
+  .ltabs { display: flex; gap: 6px; margin-bottom: 6px; background: rgba(0,0,0,.25); padding: 5px; border-radius: 14px; }
   .ltab {
-    flex: 1; padding: 8px; border-radius: 12px; cursor: pointer; text-align: center;
-    background: rgba(255,255,255,.07); border: none; color: #cfe3f5; font-family: inherit; font-weight: 900; font-size: 14px;
+    flex: 1; padding: 9px; border-radius: 10px; cursor: pointer; text-align: center;
+    background: transparent; border: none; color: #cfe3f5; font-family: inherit; font-weight: 900; font-size: 14px;
+    transition: background .2s, color .2s;
   }
-  .ltab.sel { background: #ffd97a; color: #082238; }
+  .ltab.sel { background: linear-gradient(120deg, #ffd97a, #ffc95e); color: #082238; box-shadow: 0 3px 12px rgba(255,200,90,.35); }
   #login label { display: block; font-size: 13px; font-weight: 700; color: #cfe3f5; margin: 12px 0 4px; }
   #login input {
     width: 100%; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
-    border-radius: 10px; color: #fff; font-family: inherit; font-size: 14px; padding: 9px 12px; outline: none;
+    border-radius: 11px; color: #fff; font-family: inherit; font-size: 14px; padding: 10px 13px; outline: none;
+    transition: border-color .2s, box-shadow .2s;
   }
-  #login input:focus { border-color: #ffd97a; }
+  #login input:focus { border-color: #ffd97a; box-shadow: 0 0 0 3px rgba(255,217,122,.15); }
   .swatches { display: flex; gap: 8px; flex-wrap: wrap; }
-  .swatch { width: 34px; height: 34px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; }
-  .swatch.sel { border-color: #ffd97a; }
+  .swatch { width: 34px; height: 34px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: transform .15s; }
+  .swatch:hover { transform: scale(1.15); }
+  .swatch.sel { border-color: #ffd97a; transform: scale(1.12); }
   .styles { display: flex; gap: 8px; }
   .styleOpt {
     flex: 1; text-align: center; padding: 8px; border-radius: 12px; cursor: pointer;
     background: rgba(255,255,255,.07); border: 2px solid transparent; font-size: 13px; font-weight: 700;
+    transition: border-color .2s, background .2s;
   }
   .styleOpt.sel { border-color: #ffd97a; background: rgba(255,217,122,.12); }
   #login .note { font-size: 11.5px; color: #8fa8bb; margin-top: 6px; line-height: 1.7; }
-  #login .go { width: 100%; margin-top: 18px; font-size: 16px; padding: 11px; }
+  #login .go {
+    width: 100%; margin-top: 18px; font-size: 16px; padding: 12px;
+    background: linear-gradient(120deg, #ffd97a, #ffb95e); box-shadow: 0 6px 22px rgba(255,180,80,.35);
+  }
+  #login .go:hover { background: linear-gradient(120deg, #ffe9ad, #ffd97a); }
   #loginErr { color: #ff9c9c; font-size: 12.5px; margin-top: 8px; display: none; }
   #soloBtn { width: 100%; margin-top: 8px; font-size: 12px; }
+
+  /* ===== سيلويت المدينة المتحرك تحت ===== */
+  #lgCity {
+    position: fixed; bottom: 0; right: 0; left: 0; z-index: 1; pointer-events: none;
+    width: 100%; height: 230px; display: block;
+  }
+  #lgCity .win { animation: winTw 5s infinite; }
+  @keyframes winTw { 0%,100% { opacity: .95; } 50% { opacity: .25; } }
+  #lgTuk { animation: tukRide 16s linear infinite; }
+  @keyframes tukRide { from { transform: translateX(1600px); } to { transform: translateX(-260px); } }
+  #lgTuk .tukBob { animation: tukBob .4s ease-in-out infinite alternate; }
+  @keyframes tukBob { from { transform: translateY(0); } to { transform: translateY(-2px); } }
+
+  @media (max-width: 980px) {
+    .lgWrap {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: "head" "card" "more";
+      justify-items: center; row-gap: 20px;
+      padding: 30px 16px 220px;
+    }
+    .lgHead { text-align: center; }
+    .lgLogo { font-size: 36px; }
+    .lgLogo .em { font-size: 32px; }
+    .lgTag { font-size: 15.5px; }
+    .lgDesc { margin-inline: auto; font-size: 13.5px; }
+    .lgFeats { text-align: right; }
+    .lgStats { justify-content: center; }
+    #login .card { max-width: 430px; }
+  }
+  @media (max-width: 460px) {
+    .lgFeats { grid-template-columns: 1fr; }
+  }
 
   #about {
     position: fixed; inset: 0; z-index: 20; display: none;
@@ -473,9 +589,129 @@
 
 <!-- الدخول / التسجيل -->
 <div id="login">
+  <div id="lgStars"></div>
+  <div class="lgCloud" style="top:8%;width:340px;height:90px;animation-duration:90s"></div>
+  <div class="lgCloud" style="top:22%;width:260px;height:70px;animation-duration:120s;animation-delay:-40s"></div>
+  <div class="lgCloud" style="top:14%;width:420px;height:100px;animation-duration:150s;animation-delay:-90s"></div>
+
+  <!-- سيلويت المدينة -->
+  <svg id="lgCity" viewBox="0 0 1440 230" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+    <!-- توهج الأفق -->
+    <ellipse cx="720" cy="232" rx="900" ry="110" fill="rgba(255,160,70,.10)"/>
+    <!-- صف مباني خلفي -->
+    <g fill="#0a1730">
+      <rect x="-20" y="120" width="150" height="110"/><rect x="150" y="95" width="120" height="135"/>
+      <rect x="300" y="130" width="100" height="100"/><rect x="430" y="105" width="130" height="125"/>
+      <rect x="590" y="125" width="110" height="105"/><rect x="730" y="90" width="120" height="140"/>
+      <rect x="880" y="120" width="140" height="110"/><rect x="1050" y="100" width="110" height="130"/>
+      <rect x="1190" y="125" width="120" height="105"/><rect x="1330" y="105" width="130" height="125"/>
+    </g>
+    <!-- مسجد -->
+    <g>
+      <rect x="640" y="150" width="160" height="80" fill="#0e1f3e"/>
+      <path d="M 660 150 A 60 60 0 0 1 780 150 Z" fill="#13294e"/>
+      <circle cx="720" cy="88" r="5" fill="#ffd97a"/>
+      <rect x="612" y="60" width="16" height="170" fill="#0e1f3e"/>
+      <path d="M 608 60 L 628 60 L 620 34 Z" fill="#13294e"/>
+      <circle cx="620" cy="28" r="4" fill="#ffd97a"/>
+      <rect x="643" y="168" width="10" height="16" rx="5" class="win" fill="#ffd97a" style="animation-delay:.7s"/>
+      <rect x="663" y="168" width="10" height="16" rx="5" class="win" fill="#ffd97a" style="animation-delay:1.9s"/>
+      <rect x="767" y="168" width="10" height="16" rx="5" class="win" fill="#ffd97a" style="animation-delay:3.1s"/>
+    </g>
+    <!-- صف مباني أمامي بشبابيك منورة -->
+    <g fill="#0e1f3e">
+      <rect x="30" y="95" width="130" height="135"/>
+      <rect x="200" y="120" width="110" height="110"/>
+      <rect x="350" y="85" width="120" height="145"/>
+      <rect x="500" y="125" width="100" height="105"/>
+      <rect x="830" y="100" width="130" height="130"/>
+      <rect x="1000" y="125" width="110" height="105"/>
+      <rect x="1140" y="90" width="120" height="140"/>
+      <rect x="1290" y="118" width="125" height="112"/>
+    </g>
+    <g fill="#ffd97a">
+      <rect x="48" y="110" width="13" height="16" class="win" style="animation-delay:0s"/>
+      <rect x="78" y="110" width="13" height="16" class="win" style="animation-delay:2.2s"/>
+      <rect x="108" y="140" width="13" height="16" class="win" style="animation-delay:1.1s"/>
+      <rect x="48" y="170" width="13" height="16" class="win" style="animation-delay:3.4s"/>
+      <rect x="108" y="170" width="13" height="16" class="win" style="animation-delay:.6s"/>
+      <rect x="218" y="135" width="13" height="16" class="win" style="animation-delay:1.8s"/>
+      <rect x="268" y="165" width="13" height="16" class="win" style="animation-delay:4.1s"/>
+      <rect x="368" y="100" width="13" height="16" class="win" style="animation-delay:.3s"/>
+      <rect x="398" y="100" width="13" height="16" class="win" style="animation-delay:2.7s"/>
+      <rect x="428" y="130" width="13" height="16" class="win" style="animation-delay:1.4s"/>
+      <rect x="368" y="160" width="13" height="16" class="win" style="animation-delay:3.8s"/>
+      <rect x="518" y="140" width="13" height="16" class="win" style="animation-delay:.9s"/>
+      <rect x="558" y="170" width="13" height="16" class="win" style="animation-delay:2.4s"/>
+      <rect x="848" y="115" width="13" height="16" class="win" style="animation-delay:1.6s"/>
+      <rect x="898" y="115" width="13" height="16" class="win" style="animation-delay:3.2s"/>
+      <rect x="848" y="175" width="13" height="16" class="win" style="animation-delay:.4s"/>
+      <rect x="1018" y="140" width="13" height="16" class="win" style="animation-delay:2.9s"/>
+      <rect x="1068" y="170" width="13" height="16" class="win" style="animation-delay:1.2s"/>
+      <rect x="1158" y="105" width="13" height="16" class="win" style="animation-delay:.1s"/>
+      <rect x="1208" y="135" width="13" height="16" class="win" style="animation-delay:3.6s"/>
+      <rect x="1158" y="165" width="13" height="16" class="win" style="animation-delay:2.1s"/>
+      <rect x="1308" y="133" width="13" height="16" class="win" style="animation-delay:1.5s"/>
+      <rect x="1358" y="163" width="13" height="16" class="win" style="animation-delay:4.3s"/>
+    </g>
+    <!-- نخل -->
+    <g stroke="#0a1730" stroke-width="7" fill="none" stroke-linecap="round">
+      <path d="M 180 230 Q 184 190 178 168"/>
+      <path d="M 990 230 Q 986 195 992 175"/>
+    </g>
+    <g fill="#0d2142">
+      <path d="M 178 170 Q 150 158 132 168 Q 158 144 178 158 Q 182 138 200 130 Q 188 150 184 160 Q 208 148 224 158 Q 200 158 184 170 Z"/>
+      <path d="M 992 177 Q 966 166 950 175 Q 974 153 992 166 Q 996 148 1012 141 Q 1002 159 998 168 Q 1020 157 1034 166 Q 1012 166 998 177 Z"/>
+    </g>
+    <!-- الشارع -->
+    <rect x="0" y="218" width="1440" height="12" fill="#091224"/>
+    <g fill="#3e5577"><rect x="20" y="223" width="34" height="3"/><rect x="120" y="223" width="34" height="3"/><rect x="220" y="223" width="34" height="3"/><rect x="320" y="223" width="34" height="3"/><rect x="420" y="223" width="34" height="3"/><rect x="520" y="223" width="34" height="3"/><rect x="620" y="223" width="34" height="3"/><rect x="720" y="223" width="34" height="3"/><rect x="820" y="223" width="34" height="3"/><rect x="920" y="223" width="34" height="3"/><rect x="1020" y="223" width="34" height="3"/><rect x="1120" y="223" width="34" height="3"/><rect x="1220" y="223" width="34" height="3"/><rect x="1320" y="223" width="34" height="3"/></g>
+    <!-- توك توك بيعدي -->
+    <g id="lgTuk">
+      <g class="tukBob">
+        <path d="M 0 196 L -46 196 L -46 214 L 0 214 Z" fill="#15151a"/>
+        <rect x="-40" y="184" width="30" height="14" rx="3" fill="#d8a430"/>
+        <rect x="-44" y="180" width="40" height="5" rx="2.5" fill="#ffd97a"/>
+        <rect x="-12" y="186" width="9" height="10" rx="2" fill="#9fd0ff" opacity=".85"/>
+        <circle cx="-36" cy="216" r="7" fill="#0d0d10"/><circle cx="-36" cy="216" r="3" fill="#4a4f55"/>
+        <circle cx="-10" cy="216" r="7" fill="#0d0d10"/><circle cx="-10" cy="216" r="3" fill="#4a4f55"/>
+        <path d="M -2 192 L 60 186 L 60 200 Z" fill="rgba(255,236,170,.18)"/>
+        <circle cx="-3" cy="193" r="2.5" fill="#ffeebb"/>
+      </g>
+    </g>
+  </svg>
+
+  <div class="lgWrap">
+    <!-- الجناح التعريفي -->
+    <div class="lgHead">
+      <div class="lgLogo"><span class="em">🏙</span> القنايات 3D</div>
+      <div class="lgTag">بلدك بقت مدينة مفتوحة أونلاين... على خريطتها الحقيقية</div>
+      <div class="lgDesc">
+        اتفسح في شوارع القنايات الحقيقية — <b>أكتر من ١٧٠٠ شارع</b> من OpenStreetMap بمساجدها ومدارسها ومستشفاها.
+        قابل أهل البلد أونلاين، اركب توك توك، اعمل أوردر من المحلات، واسمع حكايات ناس البلد.
+      </div>
+    </div>
+
+    <div class="lgMore">
+      <div class="lgFeats">
+        <div class="lgFeat"><span class="ic">🗺</span><div><b>خريطة حقيقية ١٠٠٪</b><span>كل شارع ومعلم موجود فعلًا</span></div></div>
+        <div class="lgFeat"><span class="ic">👥</span><div><b>أونلاين مع بعض</b><span>شوف مين متصل واتقابلوا في الشارع</span></div></div>
+        <div class="lgFeat"><span class="ic">📞</span><div><b>شات ومكالمات صوتية</b><span>عام وخاص + تبادل أرقام بموافقتك</span></div></div>
+        <div class="lgFeat"><span class="ic">🏪</span><div><b>محلات وأوردرات</b><span>اطلب من محلات البلد الحقيقية</span></div></div>
+        <div class="lgFeat"><span class="ic">🎭</span><div><b>شخصيات بحكايات</b><span>١٩ شخصية بقصص متشابكة اسألها بنفسك</span></div></div>
+        <div class="lgFeat"><span class="ic">🛺</span><div><b>توك توك تحت أمرك</b><span>استدعيه واتفسح بيه في البلد كلها</span></div></div>
+      </div>
+      <div class="lgStats">
+        <div class="lgStat"><b>+١٧٠٠</b><span>شارع حقيقي</span></div>
+        <div class="lgStat"><b>١٠</b><span>معالم البلد</span></div>
+        <div class="lgStat"><b>١٩</b><span>شخصية بحكاية</span></div>
+        <div class="lgStat"><b>٢٤/٧</b><span>ليل ونهار بتوقيت مصر</span></div>
+      </div>
+  </div>
+
   <div class="card">
-    <h2>🏙 أهلًا بيك في القنايات</h2>
-    <div class="tag">مدينة أونلاين على خريطة القنايات الحقيقية</div>
+    <h2>🚪 ادخل المدينة</h2>
+    <div class="tag">سجّل دخولك أو اعمل حساب في ثواني</div>
     <div class="ltabs">
       <button class="ltab sel" data-ltab="in">🔑 تسجيل دخول</button>
       <button class="ltab" data-ltab="up">✨ حساب جديد</button>
@@ -512,6 +748,7 @@
     </div>
     <div id="loginErr"></div>
     <button class="btn ghost sm" id="soloBtn">🧍 اتفرج على المدينة من غير حساب (وضع فردي)</button>
+  </div>
   </div>
 </div>
 
@@ -3657,6 +3894,21 @@ $('logoutBtn').onclick = () => {
 };
 
 /* ================= الدخول/التسجيل ================= */
+/* نجوم شاشة الدخول */
+{
+  const starBox = $('lgStars');
+  if (starBox) {
+    for (let i = 0; i < 90; i++) {
+      const s = document.createElement('i');
+      s.style.right = (Math.random() * 100) + '%';
+      s.style.top = (Math.random() * 55) + '%';
+      s.style.animationDelay = (Math.random() * 4).toFixed(2) + 's';
+      const sz = Math.random() < 0.15 ? 3 : 2;
+      s.style.width = s.style.height = sz + 'px';
+      starBox.appendChild(s);
+    }
+  }
+}
 const PLAYER_COLORS = ['#3a6ea5', '#c23b3b', '#41b06e', '#8a5fd1', '#e8902e', '#16a3a8', '#d14f8a', '#5a6b7a'];
 let selColor = PLAYER_COLORS[0], selStyle = 'shirt';
 const swBox = $('swatches');
